@@ -1,0 +1,252 @@
+.app {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 240px 1fr 320px;
+  background-color: #0f1117;
+  color: #e5e7eb;
+}
+/*SIDEBAR STYLING*/
+.sidebar {
+  background-color: #15171e;
+  color: #e5e7eb;
+  border-right: 1px solid #292c36;
+  padding: 20px;
+}
+.sidebar h2 {
+  margin-bottom: 10px;
+  margin-top: 4px;
+  font-weight: 700;
+  font-size: 28px;
+}
+.sidebar-subtitle {
+  font-size: 14px;
+  color: #9296a5;
+  margin: 0;
+}
+.project-section {
+  margin-top: 30px;
+}
+.section-label {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 1.2px;
+  color: #777d8c;
+  margin-bottom: 12px;
+}
+.project-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #d5d8e2;
+  margin-bottom: 28px;
+}
+.file-item {
+  display: block;
+  width: 100%;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: #b8bdca;
+  text-align: left;
+  font-size: 13px;
+  cursor: pointer;
+}
+.file-item:hover {
+  background-color: #22252f;
+  color: #ffffff;
+}
+
+.tree-children {
+  margin-left: 12px;
+  border-left: 1px solid #292c36;
+}
+/*COMPLETE*/
+
+/*WORKSPACE STYLING*/
+.workspace {
+  min-width: 0;
+  padding: 32px;
+}
+.workspace-header {
+  padding-bottom: 24px;
+  border-bottom: 1px solid #292c36;
+  margin-bottom: 24px;
+}
+
+.workspace-header h1 {
+  font-size: 26px;
+  font-weight: 600;
+  color: rgb(155, 28, 155);
+  margin: 0 0 8px;
+}
+
+.workspace-header p {
+  font-size: 15px;
+  color: #9296a5;
+  margin: 0;
+  line-height: 1.6;
+}
+.welcome-heading {
+  font-size: 28px;
+  font-weight: 600;
+  color: #e5e7eb;
+  margin: 0 0 24px;
+}
+.editor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  background-color: #15171e;
+  border-bottom: 1px solid #292c36;
+}
+.editor-content {
+  padding: 20px 24px;
+  overflow: auto;
+  line-height: 1.7;
+  display: flex;
+  gap: 16px;
+  padding: 20px 24px;
+  overflow: auto;
+  line-height: 1.7;
+}
+.line-numbers {
+  text-align: right;
+  color: #777d8c;
+  user-select: none;
+  flex-shrink: 0;
+}
+.line-numbers div {
+  height: 22.1px;
+  line-height:22.1px;
+}
+
+.editor-content pre {
+  margin: 0;
+}
+.line-numbers,
+.editor-content pre {
+  font-family: monospace;
+  font-size: 13px;
+  line-height: 1.7;
+}
+.folder-item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 34px;
+  margin: 2px 0;
+  padding-top: 6px;
+  padding-bottom: 6px;
+  border-radius: 6px;
+  color: #c5c9d6;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.5;
+  transition: background-color 0.15s ease;
+  background: transparent;
+  border: none;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  gap: 8px;
+}
+.file-item.active {
+  background-color: #292d40;
+  color: #a5b4fc;
+  border-left: 2px solid #818cf8;
+}
+
+.folder-item:hover {
+  background-color: #22252f;
+  color: #ffffff;
+}
+/*AI PANEL*/
+
+.ai-panel {
+  background-color: #15171e;
+  border-left: 1px solid #292c36;
+  padding: 24px;
+}
+
+
+.ai-panel h2 {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0 0 8px;
+  color: #e5e7eb;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #292c36;
+  margin-bottom: 16px;
+}
+
+.ai-panel p {
+  font-size: 15px;
+  line-height: 1.6;
+  color: #9296a5;
+  margin: 0;
+}
+.chat-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 75vh;
+}
+.chat-input-area {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  padding: 12px;
+  background-color: #1c1f29;
+  border: 1px solid #343846;
+  border-radius: 12px;
+}
+.chat-input-area textarea {
+  flex: 1;
+  min-width: 0;
+  resize: none;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #e5e7eb;
+  font-size: 13px;
+  font-family: inherit;
+  line-height: 1.6;
+}
+
+.chat-input-area textarea::placeholder {
+  color: #777d8c;
+}
+.chat-input-area button {
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 8px;
+  background-color: #6366f1;
+  color: #ffffff;
+  font-size: 20px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.chat-input-area button:hover {
+  background-color: #4f46e5;
+}
+.chat-empty-state {
+  text-align: center;
+  margin-top: 60px;
+}
+
+.chat-empty-state h3 {
+  font-size: 15px;
+  font-weight: 600;
+  color: #e5e7eb;
+  margin: 12px 0 8px;
+}
+
+.chat-empty-state p {
+  font-size: 12px;
+  line-height: 1.6;
+  color: #9296a5;
+}
