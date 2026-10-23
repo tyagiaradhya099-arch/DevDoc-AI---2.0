@@ -8,6 +8,8 @@ function App() {
   const[collapsedFolders, setCollapsedFolders] = useState({});
   const[filesLoading, setFilesLoading] = useState(true);
   const[filesError, setFilesError] = useState("");
+  const [fileLoading, setFileLoading] = useState(false);
+  const [fileError, setFileError] = useState("");
 
 
   const fetchFiles = useCallback(async () => {
@@ -37,17 +39,38 @@ function App() {
   useEffect(() => {
     fetchFiles();
   }, [fetchFiles]);
+    
+  //use to to show one file loading error
+  useEffect(() => {
+    if (!selectedFile) return;
 
-    useEffect(() => {
-      if(!selectedFile) return;
+    const fetchFileContent = async () => {
+    try {
+      setFileLoading(true);
+      setFileError("");
+      setFileContent("");
 
-      fetch(`http://localhost:5000/api/file?path=${encodeURIComponent(selectedFile)}`)
+      const response = await fetch(
+        `http://localhost:5000/api/file?path=${encodeURIComponent(selectedFile)}`
+      );
 
-        .then((response) => response.json())
-        .then((data) => {
-          setFileContent(data.content);
-        });
-      },[selectedFile]);
+      if (!response.ok) {
+        throw new Error("Failed to load file content.");
+      }
+
+      const data = await response.json();
+      setFileContent(data.content);
+    } catch (error) {
+      console.error("Failed to fetch file content:", error);
+      setFileError("Unable to open this file. Please try again.");
+    } finally {
+      setFileLoading(false);
+    }
+  };
+
+  fetchFileContent();
+}, [selectedFile]);
+      
 
       //for tree structure of the file explorer
 
@@ -176,17 +199,23 @@ function App() {
               <span className="editor-filename">📄 {selectedFile}</span>
             </div>
 
-            <div className="editor-content">
-              <div className="line-numbers">
-                {fileContent.split("\n").map((_, index) => (
-                  <div key={index}>{index + 1}</div>
-                ))}
+            {fileLoading ? (
+              <p className="explorer-status">Loading file contents...</p>
+            ) : fileError ? (
+              <p className="explorer-error">{fileError}</p>
+            ) : (
+              <div className="editor-content">
+                <div className="line-numbers">
+                  {fileContent.split("\n").map((_, index) => (
+                    <div key={index}>{index + 1}</div>
+                  ))}
+               </div>
+
+                <pre>
+                  <code>{fileContent}</code>
+                </pre>
               </div>
-              <pre>
-                <code>{fileContent}  
-                </code>
-              </pre>
-            </div>
+            )}
           </div>
         ) : (
           <h1 className="welcome-heading">Welcome to DevDoc</h1>
