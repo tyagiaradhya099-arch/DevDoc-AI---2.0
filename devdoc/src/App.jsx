@@ -1,23 +1,48 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import "./App.css";
 
 function App() {
   const[files, setFiles] = useState([]);
   const[selectedFile, setSelectedFile] = useState(null);
   const[fileContent, setFileContent] = useState("");// 🚀 ACTUAL PROJECT CODE
-  const [collapsedFolders, setCollapsedFolders] = useState({});
+  const[collapsedFolders, setCollapsedFolders] = useState({});
+  const[filesLoading, setFilesLoading] = useState(true);
+  const[filesError, setFilesError] = useState("");
 
+
+  const fetchFiles = useCallback(async () => {
+  try {
+    setFilesLoading(true);
+    setFilesError("");
+
+    const response = await fetch("http://localhost:5000/api/files");
+
+    if (!response.ok) {
+      throw new Error("Failed to load project files.");
+    }
+
+    const data = await response.json();
+    setFiles(data.files);
+  } catch (error) {
+
+    console.error("failed to fetch project files:", error);
+    setFilesError(
+      "Unable to load project files. Please check that the backend is running."
+    );
+  } finally {
+    setFilesLoading(false);
+  }
+  }, []);
 
   useEffect(() => {
-  fetch("http://localhost:5000/api/files")
-    .then((response) => response.json())
-    .then((data) => {
-      setFiles(data.files);
-    });
-    }, []);
+    fetchFiles();
+  }, [fetchFiles]);
+
     useEffect(() => {
       if(!selectedFile) return;
+
       fetch(`http://localhost:5000/api/file?path=${encodeURIComponent(selectedFile)}`)
+
         .then((response) => response.json())
         .then((data) => {
           setFileContent(data.content);
@@ -123,8 +148,20 @@ function App() {
           <p className="section-label">WORKSPACE</p>
           <h3 className="project-name">📁 My project </h3>
           <p>EXPLORER</p>
-          {renderTree(fileTree)}
-          
+          {filesLoading ? (
+            <p className="explorer-status">Loading project files...</p>
+          ) : filesError ? (
+            <div className="explorer-error">
+              <p>{filesError}</p>
+              <button type="button" onClick={fetchFiles}>
+                Retry
+              </button>
+            </div>
+          ) : files.length === 0 ? (
+            <p className="explorer-status">No files found.</p>
+          ) : (
+            renderTree(fileTree)
+          )}
         </div>
       </aside>
 
