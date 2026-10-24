@@ -11,6 +11,10 @@ function App() {
   const[fileLoading, setFileLoading] = useState(false);
   const[fileError, setFileError] = useState("");
   const[projectName, setProjectName] = useState("My Project");
+  const[selectedZip, setSelectedZip] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadMessage, setUploadMessage] = useState("");
+  const [uploadError, setUploadError] = useState("");
 
   //fetch file function
   const fetchFiles = useCallback(async () => {
@@ -40,6 +44,45 @@ function App() {
   useEffect(() => {
     fetchFiles();
   }, [fetchFiles]);
+
+  // sending uploaded files to backend
+const handleUpload = async () => {
+  if (!selectedZip || isUploading) return;
+
+  setIsUploading(true);
+  setUploadMessage("");
+  setUploadError("");
+
+  const formData = new FormData();
+  formData.append("project", selectedZip);
+
+  try {
+    const response = await fetch("http://localhost:5000/api/upload", {
+      method: "POST",
+      body: formData,
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Project upload failed.");
+    }
+
+    setProjectName(data.projectName);
+    setSelectedFile(null);
+    setFileContent("");
+
+    await fetchFiles();
+
+    setUploadMessage("Project uploaded successfully!");
+    setSelectedZip(null);
+  } catch (error) {
+    console.error("Project upload failed:", error);
+    setUploadError(error.message || "Unable to upload the project.");
+  } finally {
+    setIsUploading(false);
+  }
+};
     
   //use to to show one file loading error otherwise show its content
   useEffect(() => {
@@ -188,6 +231,32 @@ useEffect(() => {
         <div className="project-section">
           <p className="section-label">WORKSPACE</p>
           <h3 className="project-name">📁 {projectName} </h3>
+          <div className="project-upload">
+            <label htmlFor="project-zip">Upload a project ZIP</label>
+            <input
+              id="project-zip"
+              type="file"
+              accept=".zip,application/zip"
+              onChange={(event) => {
+                setSelectedZip(event.target.files?.[0] ?? null);
+              }}
+            />
+            {selectedZip && (
+              <p className="selected-file-name">
+               Selected: {selectedZip.name}
+              </p>
+            )}
+            <button
+              type="button"
+              onClick={handleUpload}
+              disabled={!selectedZip || isUploading}
+              >
+              {isUploading ? "Uploading..." : "Upload Project"} 
+            </button>
+
+            {uploadMessage && <p>{uploadMessage}</p>}
+            {uploadError && <p className="explorer-error">{uploadError}</p>}
+         </div>
           <p>EXPLORER</p>
           {filesLoading ? (
             <p className="explorer-status">Loading project files...</p>
