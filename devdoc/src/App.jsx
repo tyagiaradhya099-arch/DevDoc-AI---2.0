@@ -8,10 +8,11 @@ function App() {
   const[collapsedFolders, setCollapsedFolders] = useState({});
   const[filesLoading, setFilesLoading] = useState(true);
   const[filesError, setFilesError] = useState("");
-  const [fileLoading, setFileLoading] = useState(false);
-  const [fileError, setFileError] = useState("");
+  const[fileLoading, setFileLoading] = useState(false);
+  const[fileError, setFileError] = useState("");
+  const[projectName, setProjectName] = useState("My Project");
 
-
+  //fetch file function
   const fetchFiles = useCallback(async () => {
   try {
     setFilesLoading(true);
@@ -40,7 +41,7 @@ function App() {
     fetchFiles();
   }, [fetchFiles]);
     
-  //use to to show one file loading error
+  //use to to show one file loading error otherwise show its content
   useEffect(() => {
     if (!selectedFile) return;
 
@@ -70,6 +71,23 @@ function App() {
 
   fetchFileContent();
 }, [selectedFile]);
+//to fetch project name from backend
+useEffect(() => {
+  fetch("http://localhost:5000/api/project")
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error("Failed to fetch project information.");
+      }
+
+      return response.json();
+    })
+    .then((data) => {
+      setProjectName(data.projectName);
+    })
+    .catch((error) => {
+      console.error("Failed to fetch project information:", error);
+    });
+}, []);
       
 
       //for tree structure of the file explorer
@@ -169,7 +187,7 @@ function App() {
 
         <div className="project-section">
           <p className="section-label">WORKSPACE</p>
-          <h3 className="project-name">📁 My project </h3>
+          <h3 className="project-name">📁 {projectName} </h3>
           <p>EXPLORER</p>
           {filesLoading ? (
             <p className="explorer-status">Loading project files...</p>

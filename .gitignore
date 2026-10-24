@@ -18,3 +18,6 @@ Thumbs.db
 
 # Temporary learning file
 devdoc-backend/test-filesystem.js
+
+# Temporary ZIP uploads
+devdoc-backend/upload-temp/
