@@ -21,3 +21,6 @@ devdoc-backend/test-filesystem.js
 
 # Temporary ZIP uploads
 devdoc-backend/upload-temp/
+
+# Uploaded project data
+devdoc-backend/user-projects/
