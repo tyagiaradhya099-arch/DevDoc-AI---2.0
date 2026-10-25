@@ -10,7 +10,8 @@ function App() {
   const[filesError, setFilesError] = useState("");
   const[fileLoading, setFileLoading] = useState(false);
   const[fileError, setFileError] = useState("");
-  const[projectName, setProjectName] = useState("My Project");
+  const[projectName, setProjectName] = useState("");
+  const[hasActiveProject, setHasActiveProject] = useState(null);
   const[selectedZip, setSelectedZip] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadMessage, setUploadMessage] = useState("");
@@ -69,6 +70,8 @@ const handleUpload = async () => {
     }
 
     setProjectName(data.projectName);
+    setHasActiveProject(true);
+
     setSelectedFile(null);
     setFileContent("");
 
@@ -125,10 +128,12 @@ useEffect(() => {
       return response.json();
     })
     .then((data) => {
-      setProjectName(data.projectName);
+      setProjectName(data.projectName || "");
+      setHasActiveProject(data.hasActiveProject);
     })
     .catch((error) => {
       console.error("Failed to fetch project information:", error);
+      setHasActiveProject(null);
     });
 }, []);
       //for tree structure of the file explorer
@@ -228,7 +233,9 @@ useEffect(() => {
 
         <div className="project-section">
           <p className="section-label">WORKSPACE</p>
-          <h3 className="project-name">📁 {projectName} </h3>
+          <h3 className="project-name">
+            {hasActiveProject ? `📁 ${projectName}`:"📁 No project loaded" } 
+          </h3>
            {/* Minimal upload interface */}
           <div className="project-upload">
             <input
@@ -274,7 +281,13 @@ useEffect(() => {
           )}
         </div>
           <p>EXPLORER</p>
-          {filesLoading ? (
+          {hasActiveProject === null ? (
+            <p className="explorer-status">Checking project...</p>
+          ) : !hasActiveProject ? (
+            <p className="explorer-status">
+              No project loaded. Import a ZIP to explore its files.
+            </p>
+          ) : filesLoading ? (
             <p className="explorer-status">Loading project files...</p>
           ) : filesError ? (
             <div className="explorer-error">
@@ -283,11 +296,11 @@ useEffect(() => {
                 Retry
               </button>
             </div>
-          ) : files.length === 0 ? (
+         ) : files.length === 0 ? (
             <p className="explorer-status">No files found.</p>
-          ) : (
+         ) : (
             renderTree(fileTree)
-          )}
+         )}
         </div>
       </aside>
 

@@ -16,8 +16,8 @@ const yauzl = require("yauzl");
 const { Transform } = require("stream");
 const { pipeline } = require("stream/promises");
 
-let activeProjectPath = path.join(__dirname, "sample-project");
-let activeProjectName = path.basename(activeProjectPath);
+let activeProjectPath = null;
+let activeProjectName = null;
 
 const PROJECTS_ROOT = path.join(__dirname, "user-projects");
 fs.mkdirSync(PROJECTS_ROOT, {recursive: true});
@@ -375,6 +375,12 @@ function getFiles(directory) {
 
 //handling projectfile listing errors
 app.get("/api/files", (req, res) => {
+    if(!activeProjectPath) {
+        return res.json({
+            status:"success",
+            files:[],
+        });
+    }
     try {
         const stats = fs.statSync(activeProjectPath);
 
@@ -418,6 +424,12 @@ app.get("/api/file", (req, res) => {
         return res.status(400).json({
            status: "error",
            message: "A valid file path is required.", 
+        });
+    }
+    if(!activeProjectPath) {
+        return res.status(409).json({
+            status: "error",
+            message: "No active project. Please upload a project first.",
         });
     }
      // Resolve the requested path to an absolute path.
@@ -475,6 +487,7 @@ app.get("/api/file", (req, res) => {
 app.get("/api/project", (req, res) => {
     res.json({
         status: "success",
+        hasActiveProject: Boolean(activeProjectPath),
         projectName: activeProjectName,
     });
 });
