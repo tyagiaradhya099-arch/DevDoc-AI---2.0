@@ -131,8 +131,6 @@ useEffect(() => {
       console.error("Failed to fetch project information:", error);
     });
 }, []);
-      
-
       //for tree structure of the file explorer
 
       const buildFileTree = (files) => {
@@ -231,32 +229,50 @@ useEffect(() => {
         <div className="project-section">
           <p className="section-label">WORKSPACE</p>
           <h3 className="project-name">📁 {projectName} </h3>
+           {/* Minimal upload interface */}
           <div className="project-upload">
-            <label htmlFor="project-zip">Upload a project ZIP</label>
             <input
               id="project-zip"
+              className="upload-input"
               type="file"
               accept=".zip,application/zip"
               onChange={(event) => {
                 setSelectedZip(event.target.files?.[0] ?? null);
-              }}
-            />
-            {selectedZip && (
-              <p className="selected-file-name">
-               Selected: {selectedZip.name}
-              </p>
-            )}
-            <button
-              type="button"
-              onClick={handleUpload}
-              disabled={!selectedZip || isUploading}
-              >
-              {isUploading ? "Uploading..." : "Upload Project"} 
-            </button>
+                setUploadMessage("");
+                setUploadError("");
+             }}
+           />
 
-            {uploadMessage && <p>{uploadMessage}</p>}
-            {uploadError && <p className="explorer-error">{uploadError}</p>}
-         </div>
+           <label htmlFor="project-zip" className="upload-trigger">
+             <span className="upload-plus">+</span>
+             Import project
+           </label>
+
+           {selectedZip && (
+            <div className="upload-selected">
+              <span className="selected-file-name">{selectedZip.name}</span>
+
+              <button
+                type="button"
+                className="upload-action"
+                onClick={handleUpload}
+                disabled={isUploading}
+              >
+                {isUploading ? "Uploading..." : "Upload"}
+              </button>
+           </div>
+         )}
+
+         {uploadMessage && (
+            <p className="upload-feedback">{uploadMessage}</p>
+         )}
+
+         {uploadError && (
+           <p className="upload-feedback upload-feedback-error">
+              {uploadError}
+           </p>
+          )}
+        </div>
           <p>EXPLORER</p>
           {filesLoading ? (
             <p className="explorer-status">Loading project files...</p>
