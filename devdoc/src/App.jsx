@@ -16,6 +16,7 @@ function App() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadMessage, setUploadMessage] = useState("");
   const [uploadError, setUploadError] = useState("");
+  const[projects, setProjects] = useState([]);
 
   //fetch file function
   const fetchFiles = useCallback(async () => {
@@ -41,10 +42,63 @@ function App() {
     setFilesLoading(false);
   }
   }, []);
+  //to show retrieved projects from the backend
+const fetchProjects = useCallback(async () => {
+  try {
+  const response = await fetch("http://localhost:5000/api/projects");
+    if(!response.ok) {
+       throw new Error("Failed to fetch projects.");
+    }
+    const data = await response.json();
+    setProjects(data.projects);
+  } catch (error) {
+    console.error("Failed to fetch projects:", error);
+  }
+}, []);
+//  SWITCH BETWEEN SAVED PROJECTS
+const handleSwitchProject = async (projectId) => {
+  try {
+    setUploadError("");
+    setUploadMessage("");
+
+    const response = await fetch(
+      `http://localhost:5000/api/projects/${encodeURIComponent(projectId)}/activate`,
+      {
+        method: "POST",
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Failed to switch projects.");
+    }
+
+    // Update the active project information.
+    setProjectName(data.projectName);
+    setHasActiveProject(true);
+
+    // Clear the previously selected file.
+    setSelectedFile(null);
+    setFileContent("");
+    setFileError("");
+
+    // Refresh the file explorer and Project Library.
+    await fetchFiles();
+    await fetchProjects();
+  } catch (error) {
+    console.error("Failed to switch project:", error);
+    setUploadError(error.message || "Unable to switch projects.");
+  }
+};
 
   useEffect(() => {
     fetchFiles();
   }, [fetchFiles]);
+
+  useEffect(() => {
+  fetchProjects();
+}, [fetchProjects]);
 
   // sending uploaded files to backend
 const handleUpload = async () => {
@@ -76,6 +130,7 @@ const handleUpload = async () => {
     setFileContent("");
 
     await fetchFiles();
+    await fetchProjects();
 
     setUploadMessage("Project uploaded successfully!");
     setSelectedZip(null);
@@ -86,7 +141,7 @@ const handleUpload = async () => {
     setIsUploading(false);
   }
 };
-    
+
   //use to to show one file loading error otherwise show its content
   useEffect(() => {
     if (!selectedFile) return;
@@ -278,6 +333,43 @@ useEffect(() => {
            <p className="upload-feedback upload-feedback-error">
               {uploadError}
            </p>
+          )}
+        </div>
+        {/*PROJECT LIBRARY*/}
+        <div className="project-library">
+          <p className="section-label">MY PROJECTS</p>
+
+          {projects.length === 0 ? (
+            <p className="explorer-status">
+              No saved projects yet.
+            </p>
+          ) : (
+            <div className="project-library-list">
+             {projects.map((project) => (
+                <button
+                  type="button"
+                  key={project.id}
+                  className={`project-library-item ${
+                    project.isActive ? "active-project" : ""
+                  }`}
+                  onClick={() => handleSwitchProject(project.id)}
+                  disabled={project.isActive}
+                  title={project.name}
+                >
+                  <span className="project-library-icon">📁</span>
+
+                  <span className="project-library-name">
+                    {project.name}
+                  </span>
+
+                  {project.isActive && (
+                    <span className="active-project-indicator">
+                      Active
+                    </span>
+                  )}
+                </button>
+              ))} 
+            </div>
           )}
         </div>
           <p>EXPLORER</p>

@@ -143,6 +143,59 @@
 .upload-feedback-error {
   color: #fca5a5;
 }
+/* Project Library */.project-library {
+  margin: 20px 0;
+}
+
+.project-library-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.project-library-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 10px;
+  border-radius: 6px;
+  color: #aeb6c8;
+  font-size: 13px;
+  transition: background-color 0.2s, color 0.2s;
+  width: 100%;
+  border: none;
+  background: transparent;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.project-library-item:disabled {
+  cursor: default;
+}
+
+.project-library-item.active-project {
+  background: #232734;
+  color: #ffffff;
+}
+
+.project-library-icon {
+  flex-shrink: 0;
+  font-size: 14px;
+}
+
+.project-library-name {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.active-project-indicator {
+  flex-shrink: 0;
+  color: #86efac;
+  font-size: 10px;
+}
+
 /*WORKSPACE STYLING*/
 .workspace {
   min-width: 0;

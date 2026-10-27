@@ -21,7 +21,43 @@ let activeProjectName = null;
 
 const PROJECTS_ROOT = path.join(__dirname, "user-projects");
 fs.mkdirSync(PROJECTS_ROOT, {recursive: true});
-//temporary upload directory
+//PROJECT LIBRARY FOUNDATION
+const PROJECTS_INDEX_PATH = path.join(__dirname, "projects.json");
+// Read the saved project records.
+function readProjectsIndex() {
+    const content = fs.readFileSync(PROJECTS_INDEX_PATH, "utf8");
+    const data = JSON.parse(content);
+
+    if (!data || !Array.isArray(data.projects)) {
+        throw new Error("Invalid projects.json format.");
+    }
+
+    return data.projects;
+}
+// Save project records.
+function writeProjectsIndex(projects) {
+    fs.writeFileSync(
+        PROJECTS_INDEX_PATH,
+        JSON.stringify({ projects }, null, 2),
+        "utf8"
+    );
+}
+// Create the registry if it doesn't exist.
+// Register projects uploaded before this feature was added.
+if (!fs.existsSync(PROJECTS_INDEX_PATH)) {
+    const existingProjects = fs
+        .readdirSync(PROJECTS_ROOT, { withFileTypes: true })
+        .filter((item) => item.isDirectory())
+        .map((item) => ({
+            id: item.name,
+            name: item.name,
+            folder: item.name,
+            createdAt: new Date().toISOString(),
+        }));
+
+    writeProjectsIndex(existingProjects);
+}
+//TEMPORARY UPLOAD DIRECTORY
 const UPLOAD_TEMP = path.join(__dirname, "upload-temp");
 fs.mkdirSync(UPLOAD_TEMP, { recursive: true });
 
@@ -491,6 +527,123 @@ app.get("/api/project", (req, res) => {
         projectName: activeProjectName,
     });
 });
+//API endpoint to retrive LIibrary
+app.get("/api/projects", (req, res) => {
+    try {
+        const projects = readProjectsIndex();
+
+        const activeProjectId = activeProjectPath
+            ? path.basename(activeProjectPath)
+            : null;
+
+        const projectList = projects.map((project) => ({
+            id: project.id,
+            name: project.name,
+            createdAt: project.createdAt,
+            isActive: project.id === activeProjectId,
+        }));
+
+        return res.json({
+            status: "success",
+            projects: projectList,
+        });
+    } catch (error) {
+        console.error("Failed to load project library:", error);
+
+        return res.status(500).json({
+            status: "error",
+            message: "Unable to load the project library.",
+        });
+    }
+});
+//
+// ACTIVATE A SAVED PROJECT
+app.post("/api/projects/:id/activate", (req, res) => {
+    try {
+        const projectId = req.params.id;
+        const projects = readProjectsIndex();
+
+        // Find the requested project in the registry.
+        const project = projects.find(
+            (item) => item.id === projectId
+        );
+
+        if (!project) {
+            return res.status(404).json({
+                status: "error",
+                message: "Project not found in the library.",
+            });
+        }
+
+        // Ensure the stored folder name is valid.
+        if (
+            typeof project.folder !== "string" ||
+            !project.folder ||
+            path.basename(project.folder) !== project.folder
+        ) {
+            return res.status(400).json({
+                status: "error",
+                message: "Invalid project folder.",
+            });
+        }
+
+        // Resolve the project directory safely.
+        const rootPath = path.resolve(PROJECTS_ROOT);
+        const destinationPath = path.resolve(
+            rootPath,
+            project.folder
+        );
+
+        const relativePath = path.relative(
+            rootPath,
+            destinationPath
+        );
+
+        if (
+            relativePath === ".." ||
+            relativePath.startsWith(`..${path.sep}`) ||
+            path.isAbsolute(relativePath)
+        ) {
+            return res.status(403).json({
+                status: "error",
+                message: "Access outside the project library is not allowed.",
+            });
+        }
+
+        // Verify that the project directory exists.
+        const stats = fs.statSync(destinationPath);
+
+        if (!stats.isDirectory()) {
+            return res.status(400).json({
+                status: "error",
+                message: "The selected project is not a directory.",
+            });
+        }
+
+        // Switch the active project.
+        activeProjectPath = destinationPath;
+        activeProjectName = project.name;
+
+        return res.json({
+            status: "success",
+            message: "Project activated successfully.",
+            projectId: project.id,
+            projectName: activeProjectName,
+            hasActiveProject: true,
+        });
+
+    } catch (error) {
+        console.error("Failed to activate project:", error);
+
+        return res.status(
+            error.code === "ENOENT" ? 404 : 500
+        ).json({
+            status: "error",
+            message: "Unable to activate the selected project.",
+        });
+    }
+});
+//
 //upload endpoint
 app.post("/api/upload", (req, res) => {
     upload.single("project")(req, res, async (uploadError) => {
@@ -540,6 +693,16 @@ app.post("/api/upload", (req, res) => {
                     .replace(/[<>:"/\\|?*\x00-\x1F]/g, "-")
                     .trim()
                     .slice(0, 80) || "Uploaded project";
+            const projects = readProjectsIndex();
+            
+            const newProject = {
+                id: projectFolder,
+                name: displayName,
+                folder: projectFolder,
+                createdAt: new Date().toISOString(),
+            };
+            projects.push(newProject);
+            writeProjectsIndex(projects);
 
             // Step 5: Switch projects only after extraction succeeds.
             activeProjectPath = destinationPath;

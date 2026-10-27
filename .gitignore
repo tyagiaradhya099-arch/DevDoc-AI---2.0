@@ -24,3 +24,6 @@ devdoc-backend/upload-temp/
 
 # Uploaded project data
 devdoc-backend/user-projects/
+
+# Local project library metadata
+devdoc-backend/projects.json
