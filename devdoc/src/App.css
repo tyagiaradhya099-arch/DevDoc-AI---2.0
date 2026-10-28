@@ -226,43 +226,77 @@
   color: #e5e7eb;
   margin: 0 0 24px;
 }
-.editor-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 24px;
-  background-color: #15171e;
-  border-bottom: 1px solid #292c36;
+/* Code editor panel */
+.code-editor {
+  width: 100%;
+  max-width: none;
+  box-sizing: border-box;
 }
+
+/* Main editor layout */
 .editor-content {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 12px;
+
+  width: 100%;
+  box-sizing: border-box;
   padding: 20px 24px;
+
   overflow: auto;
-  line-height: 1.7;
-  display: flex;
-  gap: 16px;
-  padding: 20px 24px;
-  overflow: auto;
-  line-height: 1.7;
+  text-align: left;
 }
+
+/* Line-number gutter */
 .line-numbers {
+  margin: 0;
+  padding: 0;
+
   text-align: right;
   color: #777d8c;
   user-select: none;
-  flex-shrink: 0;
-}
-.line-numbers div {
-  height: 22.1px;
-  line-height:22.1px;
-}
+  white-space: nowrap;
 
-.editor-content pre {
-  margin: 0;
-}
-.line-numbers,
-.editor-content pre {
   font-family: monospace;
   font-size: 13px;
-  line-height: 1.7;
+  line-height: 22px;
+}
+
+.line-numbers div {
+  height: 22px;
+  line-height: 22px;
+  margin: 0;
+  padding: 0;
+}
+
+/* Source-code area */
+.editor-content pre {
+  min-width: 0;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+
+  text-align: left;
+  white-space: pre;
+
+  font-family: monospace;
+  font-size: 13px;
+  line-height: 22px;
+}
+
+/* Keep source-code line spacing consistent */
+.editor-content code {
+  display: block;
+  margin: 0;
+  padding: 0;
+
+  text-align: left;
+  white-space: pre;
+
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
 }
 .folder-item {
   display: flex;
