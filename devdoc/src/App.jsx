@@ -91,6 +91,67 @@ const handleSwitchProject = async (projectId) => {
     setUploadError(error.message || "Unable to switch projects.");
   }
 };
+//  RENAME A SAVED SAVED PROJECT
+const handleRenameProject = async (project) => {
+  // Ask the user for the new display name.
+  const enteredName = window.prompt(
+    "Enter a new project name:",
+    project.name
+  );
+
+  // Stop if the user cancels.
+  if (enteredName === null) return;
+
+  const newName = enteredName.trim();
+
+  // Validate the name before sending the request.
+  if (!newName || newName.length > 80) {
+    window.alert("Project name must contain 1–80 characters.");
+    return;
+  }
+
+  // No request is needed if the name hasn't changed.
+  if (newName === project.name) return;
+
+  try {
+    const response = await fetch(
+      `http://localhost:5000/api/projects/${encodeURIComponent(project.id)}/rename`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: newName,
+        }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Failed to rename project.");
+    }
+
+    // Update the Project Library without reloading the page.
+    setProjects((previousProjects) =>
+      previousProjects.map((item) =>
+        item.id === project.id
+          ? { ...item, name: data.projectName }
+          : item
+      )
+    );
+
+    // Update the workspace heading if this project is active.
+    if (project.isActive) {
+      setProjectName(data.projectName);
+    }
+
+  } catch (error) {
+    console.error("Failed to rename project:", error);
+    window.alert(error.message || "Unable to rename project.");
+  }
+};
 
   useEffect(() => {
     fetchFiles();
@@ -344,30 +405,45 @@ useEffect(() => {
               No saved projects yet.
             </p>
           ) : (
-            <div className="project-library-list">
-             {projects.map((project) => (
-                <button
-                  type="button"
-                  key={project.id}
-                  className={`project-library-item ${
-                    project.isActive ? "active-project" : ""
-                  }`}
-                  onClick={() => handleSwitchProject(project.id)}
-                  disabled={project.isActive}
-                  title={project.name}
-                >
-                  <span className="project-library-icon">📁</span>
+           <div className="project-library-list">
+              {projects.map((project) => (
+                <div key={project.id} className="project-library-row">
 
-                  <span className="project-library-name">
-                    {project.name}
-                  </span>
+                  {/* Button to switch projects */}
+                  <button
+                    type="button"
+                    className={`project-library-item ${
+                      project.isActive ? "active-project" : ""
+                    }`}
+                    onClick={() => handleSwitchProject(project.id)}
+                    disabled={project.isActive}
+                    title={project.name}
+                  >
+                    <span className="project-library-icon">📁</span>
 
-                  {project.isActive && (
-                    <span className="active-project-indicator">
-                      Active
+                    <span className="project-library-name">
+                      {project.name}
                     </span>
-                  )}
-                </button>
+
+                    {project.isActive && (
+                      <span className="active-project-indicator">
+                        Active
+                      </span>
+                    )}
+                 </button>
+
+                  {/* Button to rename the project */}
+                 <button
+                   type="button"
+                   className="project-rename-button"
+                   onClick={() => handleRenameProject(project)}
+                   title={`Rename ${project.name}`}
+                   aria-label={`Rename ${project.name}`}
+                  >
+                  ✎
+                  </button>
+
+                </div>
               ))} 
             </div>
           )}

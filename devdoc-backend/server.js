@@ -557,6 +557,71 @@ app.get("/api/projects", (req, res) => {
     }
 });
 //
+//  RENAME A SAVED PROJECT
+
+app.patch("/api/projects/:id/rename", (req, res) => {
+    try {
+        const projectId = req.params.id;
+        const requestedName = req.body?.name;
+
+        // Validate the requested name.
+        if (
+            typeof requestedName !== "string" ||
+            !requestedName.trim() ||
+            requestedName.trim().length > 80
+        ) {
+            return res.status(400).json({
+                status: "error",
+                message: "Project name must contain 1–80 characters.",
+            });
+        }
+
+        // Find the project in the registry.
+        const projects = readProjectsIndex();
+
+        const project = projects.find(
+            (item) => item.id === projectId
+        );
+
+        if (!project) {
+            return res.status(404).json({
+                status: "error",
+                message: "Project not found in the library.",
+            });
+        }
+
+        // Update the display name.
+        const newName = requestedName.trim();
+        project.name = newName;
+
+        // Save the updated project registry.
+        writeProjectsIndex(projects);
+
+        // Update the active project's displayed name if necessary.
+        if (
+            activeProjectPath &&
+            path.basename(activeProjectPath) === project.folder
+        ) {
+            activeProjectName = newName;
+        }
+
+        return res.json({
+            status: "success",
+            message: "Project renamed successfully.",
+            projectId: project.id,
+            projectName: project.name,
+        });
+
+    } catch (error) {
+        console.error("Failed to rename project:", error);
+
+        return res.status(500).json({
+            status: "error",
+            message: "Unable to rename the project.",
+        });
+    }
+});
+//
 // ACTIVATE A SAVED PROJECT
 app.post("/api/projects/:id/activate", (req, res) => {
     try {
