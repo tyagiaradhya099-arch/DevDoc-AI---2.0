@@ -709,6 +709,140 @@ app.post("/api/projects/:id/activate", (req, res) => {
     }
 });
 //
+// DELETE A SAVED PROJECT
+
+app.delete("/api/projects/:id", async (req, res) => {
+    try {
+        const projectId = req.params.id;
+        const projects = readProjectsIndex();
+
+        // 1. Find the requested project.
+        const project = projects.find(
+            (item) => item.id === projectId
+        );
+
+        if (!project) {
+            return res.status(404).json({
+                status: "error",
+                message: "Project not found in the library.",
+            });
+        }
+
+        // 2. Validate the stored folder name.
+        if (
+            typeof project.folder !== "string" ||
+            !project.folder ||
+            project.folder === "." ||
+            project.folder === ".." ||
+            project.folder.includes("/") ||
+            project.folder.includes("\\")
+        ) {
+            return res.status(400).json({
+                status: "error",
+                message: "Invalid project folder.",
+            });
+        }
+
+        // 3. Resolve the destination and verify it stays
+        //    inside the user-projects directory.
+        const rootPath = path.resolve(PROJECTS_ROOT);
+        const destinationPath = path.resolve(
+            rootPath,
+            project.folder
+        );
+
+        const relativePath = path.relative(
+            rootPath,
+            destinationPath
+        );
+
+        if (
+            !relativePath ||
+            relativePath === ".." ||
+            relativePath.startsWith(`..${path.sep}`) ||
+            path.isAbsolute(relativePath)
+        ) {
+            return res.status(403).json({
+                status: "error",
+                message: "Invalid project location.",
+            });
+        }
+
+        // 4. Ensure the destination is a real directory,
+        //    not a symbolic link.
+        const stats = await fs.promises.lstat(destinationPath);
+
+        if (!stats.isDirectory() || stats.isSymbolicLink()) {
+            return res.status(400).json({
+                status: "error",
+                message: "The project folder is invalid.",
+            });
+        }
+
+        // 5. Prepare the updated project library.
+        const remainingProjects = projects.filter(
+            (item) => item.id !== projectId
+        );
+
+        // Remember whether we're deleting the active project.
+        const wasActive =
+            activeProjectPath !== null &&
+            path.resolve(activeProjectPath) === destinationPath;
+
+        // Update the registry first.
+        writeProjectsIndex(remainingProjects);
+
+        try {
+            // 6. Delete the project's files from disk.
+            await fs.promises.rm(destinationPath, {
+                recursive: true,
+                force: false,
+            });
+        } catch (cleanupError) {
+            // Restore the registry if filesystem cleanup fails.
+            try {
+                writeProjectsIndex(projects);
+            } catch (restoreError) {
+                console.error(
+                    "Failed to restore project registry:",
+                    restoreError
+                );
+            }
+
+            throw cleanupError;
+        }
+
+        // 7. Clear the active workspace if necessary.
+        if (wasActive) {
+            activeProjectPath = null;
+            activeProjectName = null;
+        }
+
+        return res.json({
+            status: "success",
+            message: "Project deleted successfully.",
+            deletedProjectId: projectId,
+            hasActiveProject: Boolean(activeProjectPath),
+            activeProjectName: activeProjectName,
+        });
+
+    } catch (error) {
+        console.error("Failed to delete project:", error);
+
+        if (error.code === "ENOENT") {
+            return res.status(404).json({
+                status: "error",
+                message: "The project folder was not found.",
+            });
+        }
+
+        return res.status(500).json({
+            status: "error",
+            message: "Unable to delete the project.",
+        });
+    }
+});
+//
 //upload endpoint
 app.post("/api/upload", (req, res) => {
     upload.single("project")(req, res, async (uploadError) => {

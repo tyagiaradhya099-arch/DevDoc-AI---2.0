@@ -17,6 +17,7 @@ function App() {
   const [uploadMessage, setUploadMessage] = useState("");
   const [uploadError, setUploadError] = useState("");
   const[projects, setProjects] = useState([]);
+  const [deletingProjectId, setDeletingProjectId] = useState(null);
 
   //fetch file function
   const fetchFiles = useCallback(async () => {
@@ -150,6 +151,53 @@ const handleRenameProject = async (project) => {
   } catch (error) {
     console.error("Failed to rename project:", error);
     window.alert(error.message || "Unable to rename project.");
+  }
+};
+//  DELETE A SAVED PROJECT
+const handleDeleteProject = async (project) => {
+  // Ask for confirmation before permanently deleting files.
+  const confirmed = window.confirm(
+    `Are you sure you want to delete "${project.name}"? This will permanently remove its files.`
+  );
+
+  if (!confirmed) return;
+
+  setDeletingProjectId(project.id);
+
+  try {
+    const response = await fetch(
+      `http://localhost:5000/api/projects/${encodeURIComponent(project.id)}`,
+      {
+        method: "DELETE",
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Failed to delete project.");
+    }
+
+    // Update the active project information.
+    setHasActiveProject(data.hasActiveProject);
+    setProjectName(data.activeProjectName || "");
+
+    // Clear the editor if the deleted project was active.
+    if (project.isActive) {
+      setSelectedFile(null);
+      setFileContent("");
+      setFileError("");
+    }
+
+    // Refresh the Project Library and file explorer.
+    await fetchProjects();
+    await fetchFiles();
+
+  } catch (error) {
+    console.error("Failed to delete project:", error);
+    window.alert(error.message || "Unable to delete project.");
+  } finally {
+    setDeletingProjectId(null);
   }
 };
 
@@ -441,6 +489,18 @@ useEffect(() => {
                    aria-label={`Rename ${project.name}`}
                   >
                   ✎
+                  </button>
+
+                  {/* Delete project */} 
+                  <button 
+                    type="button"
+                    className="project-delete-button"
+                    onClick={() => handleDeleteProject(project)}
+                    disabled={deletingProjectId === project.id}
+                    title={`Delete ${project.name}`}
+                    aria-lable={`Delete ${project.name}`}
+                  >
+                     {deletingProjectId === project.id ? "..." : "×"}
                   </button>
 
                 </div>
