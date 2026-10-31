@@ -27,3 +27,7 @@ devdoc-backend/user-projects/
 
 # Local project library metadata
 devdoc-backend/projects.json
+
+# Environment variables and secrets
+.env
+.env.*

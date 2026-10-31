@@ -11,7 +11,9 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@google/genai": "^2.32.0",
     "cors": "^2.8.6",
+    "dotenv": "^18.0.9",
     "express": "^5.2.1",
     "multer": "^2.5.0",
     "yauzl": "^3.4.0"
