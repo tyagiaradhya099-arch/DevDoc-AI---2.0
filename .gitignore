@@ -31,3 +31,6 @@ devdoc-backend/projects.json
 # Environment variables and secrets
 .env
 .env.*
+
+# LanceDB local vector database
+devdoc-backend/vector-store/

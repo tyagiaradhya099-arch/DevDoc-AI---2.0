@@ -119,8 +119,52 @@ async function countTokensForChunk(chunk) {
 
     return tokenCount;
 }
+// Generate embedding for a user's question.
+async function generateQueryEmbedding(query) {
+
+    if (
+        typeof query !== "string" ||
+        !query.trim()
+    ) {
+        throw new Error("A valid search query is required.");
+    }
+
+    const ai = await getGeminiClient();
+
+    // Format the query for code retrieval.
+    const inputText =
+        `task: code retrieval | query: ${query.trim()}`;
+
+    // Request the query embedding.
+    const response = await ai.models.embedContent({
+
+        model: MODEL_NAME,
+
+        contents: inputText,
+
+        config: {
+            outputDimensionality: EMBEDDING_DIMENSIONS,
+        },
+
+    });
+
+    // Extract the numerical vector.
+    const embedding = response.embeddings?.[0]?.values;
+
+    // Validate the returned embedding.
+    if (
+        !Array.isArray(embedding) ||
+        embedding.length !== EMBEDDING_DIMENSIONS ||
+        !embedding.every(Number.isFinite)
+    ) {
+        throw new Error("Gemini returned an invalid query embedding.");
+    }
+
+    return embedding;
+}
 // Export the embedding function.
 module.exports = {
     generateEmbeddingForChunk,
     countTokensForChunk,
+    generateQueryEmbedding,
 };
