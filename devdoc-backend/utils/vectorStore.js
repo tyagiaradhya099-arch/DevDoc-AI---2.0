@@ -142,6 +142,7 @@ async function storeEmbeddedChunks(projectId, embeddedChunks) {
         return {
             storedCount: 0,
             projectId,
+            storedChunkId: [],
             message: "No chunks to store.",
         };
     }
@@ -160,15 +161,54 @@ async function storeEmbeddedChunks(projectId, embeddedChunks) {
     );
 
     return {
-
         status: "success",
-
         projectId,
-
         storedCount: records.length,
-
         totalProjectChunks: projectChunkCount,
+        storedChunkIds: records.map((record) => record.id),
+    };
+}
+// Delete outdated chunks belonging to a project.
+async function deleteStaleProjectChunks(projectId, indexingStartedAt) {
 
+    if (
+        typeof projectId !== "string" ||
+        !projectId.trim()
+    ) {
+        throw new Error("A valid project ID is required.");
+    }
+
+    const cutoffDate = new Date(indexingStartedAt);
+
+    if (Number.isNaN(cutoffDate.getTime())) {
+        throw new Error("A valid indexing start time is required.");
+    }
+
+    const table = await getCodeChunksTable();
+
+    if (!table) {
+        return {
+            deletedCount: 0,
+            projectId,
+        };
+    }
+
+    const safeProjectId = projectId.replace(/'/g, "''");
+    const cutoffTimestamp = cutoffDate.toISOString();
+
+    const staleFilter =
+        `project_id = '${safeProjectId}' AND indexed_at < '${cutoffTimestamp}'`;
+
+    const deletedCount = await table.countRows(staleFilter);
+
+    if (deletedCount > 0) {
+        await table.delete(staleFilter);
+    }
+
+    return {
+        status: "success",
+        projectId,
+        deletedCount,
     };
 }
 
@@ -184,6 +224,49 @@ async function getProjectChunkCount(projectId) {
     return await table.countRows(
         `project_id = '${projectId.replace(/'/g, "''")}'`
     );
+}
+// Remove outdated chunks after a successful re-indexing run.
+async function deleteStaleProjectChunks(projectId, indexingStartedAt) {
+
+    if (
+        typeof projectId !== "string" ||
+        !projectId.trim()
+    ) {
+        throw new Error("A valid project ID is required.");
+    }
+
+    const cutoffDate = new Date(indexingStartedAt);
+
+    if (Number.isNaN(cutoffDate.getTime())) {
+        throw new Error("A valid indexing start time is required.");
+    }
+
+    const table = await getCodeChunksTable();
+
+    if (!table) {
+        return {
+            deletedCount: 0,
+            projectId,
+        };
+    }
+
+    const safeProjectId = projectId.replace(/'/g, "''");
+    const cutoffTimestamp = cutoffDate.toISOString();
+
+    const staleFilter =
+        `project_id = '${safeProjectId}' AND indexed_at < '${cutoffTimestamp}'`;
+
+    const deletedCount = await table.countRows(staleFilter);
+
+    if (deletedCount > 0) {
+        await table.delete(staleFilter);
+    }
+
+    return {
+        status: "success",
+        projectId,
+        deletedCount,
+    };
 }
 //7. Search for similar code chunks.
 async function searchSimilarChunks(
@@ -231,13 +314,9 @@ async function searchSimilarChunks(
 }
 // Export database operations.
 module.exports = {
-
     getDatabase,
-
     storeEmbeddedChunks,
-
     getProjectChunkCount,
-
     searchSimilarChunks,
-
+    deleteStaleProjectChunks,
 };

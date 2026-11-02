@@ -164,6 +164,7 @@ async function generateQueryEmbedding(query) {
 }
 // Export the embedding function.
 module.exports = {
+    getGeminiClient,
     generateEmbeddingForChunk,
     countTokensForChunk,
     generateQueryEmbedding,

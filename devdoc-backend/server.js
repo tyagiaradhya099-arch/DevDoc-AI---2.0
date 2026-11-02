@@ -19,9 +19,14 @@ const crypto = require("crypto");
 const yauzl = require("yauzl");
 const { Transform } = require("stream");
 const { pipeline } = require("stream/promises");
+const { indexProject } = require("./utils/projectIndexer");
+const { retrieveRelevantChunks } = require("./utils/retrievalService");
+const { generateAnswer } = require("./utils/generationService");
 
 let activeProjectPath = null;
 let activeProjectName = null;
+// Track projects currently being indexed.
+const indexingProjects = new Set();
 
 const PROJECTS_ROOT = path.join(__dirname, "user-projects");
 fs.mkdirSync(PROJECTS_ROOT, {recursive: true});
@@ -531,6 +536,157 @@ app.get("/api/project", (req, res) => {
         projectName: activeProjectName,
     });
 });
+//RETRIEVE RELEVANT CODE CHUNKS FOR A USER QUESTION.
+app.post("/api/retrieve", async (req, res) => {
+
+    try {
+        const { query, limit = 5 } = req.body || {};
+
+        //Validate the question.
+        if(typeof query !== "string" || !query.trim()) {
+            return res.status(400).json({
+                status: "error",
+                message: "A valid question is required.",
+            });
+        }
+        if (!Number.isInteger(limit) || limit < 1) {
+            return res.status(400).json({
+                status: "error",
+                message: "Limit must be a positive integer.",
+            });
+        }    
+        // Check whether a project is active.
+        if (!activeProjectPath) {
+            return res.status(400).json({
+                status: "error",
+                message: "No active project found.",
+            });
+        }
+        //Resolve the active project.
+        const activeProjectId = path.basename(activeProjectPath);
+        const projects = readProjectsIndex();
+
+                const project = projects.find(
+            (item) => item.id === activeProjectId
+        );
+
+        if (!project) {
+            return res.status(404).json({
+                status: "error",
+                message: "Active project not found.",
+            });
+        }
+        
+        // Ensure the project has been indexed.
+        if (project.indexingStatus !== "indexed") {
+            return res.status(409).json({
+                status: "error",
+                message: "Please index the project before asking questions.",
+            });
+        }
+        // Retrieve relevant code chunks.
+        const chunks = await retrieveRelevantChunks(
+            query,
+            project.id,
+            { limit }
+        );
+
+        return res.json({
+            status: "success",
+            projectId: project.id,
+            query,
+            chunks,
+        })
+    } catch (error) {
+        console.error("Code retrieval failed:", error);
+
+        return res.status(500).json({
+            status: "error",
+            message: "Unable to retrieve relevant code.",
+        });
+    }
+});
+//COMPLETE RAG QUESTION-ANSWERING ENDPOINT.
+app.post("/api/chat", async (req, res) => {
+
+    try {
+        const { query, limit = 5 } = req.body || {};
+
+        // Validate the question.
+        if (typeof query !== "string" || !query.trim()) {
+            return res.status(400).json({
+                status: "error",
+                message: "A valid question is required.",
+            });
+        }
+
+        if (!Number.isInteger(limit) || limit < 1 || limit > 10) {
+            return res.status(400).json({
+                status: "error",
+                message: "Limit must be between 1 and 10.",
+            });
+        }
+
+        // Check active project.
+        if (!activeProjectPath) {
+            return res.status(400).json({
+                status: "error",
+                message: "No active project found.",
+            });
+        }
+
+        const activeProjectId = path.basename(activeProjectPath);
+        const projects = readProjectsIndex();
+
+        const project = projects.find(
+            (item) => item.id === activeProjectId
+        );
+
+        if (!project) {
+            return res.status(404).json({
+                status: "error",
+                message: "Active project not found.",
+            });
+        }
+
+        if (project.indexingStatus !== "indexed") {
+            return res.status(409).json({
+                status: "error",
+                message: "Please index the project first.",
+            });
+        }
+
+        // STEP 1: Retrieve relevant code.
+        const chunks = await retrieveRelevantChunks(
+            query,
+            project.id,
+            { limit }
+        );
+
+        // STEP 2: Generate an answer using retrieved code.
+        const answer = await generateAnswer(query, chunks);
+        // STEP 3: Return answer and sources.
+        return res.json({
+            status: "success",
+            projectId: project.id,
+            query,
+            answer,
+            sources: chunks.map((chunk) => ({
+                filePath: chunk.filePath,
+                startLine: chunk.startLine,
+                endLine: chunk.endLine,
+            })),
+        });
+
+    } catch (error) {
+        console.error("RAG response failed:", error);
+
+        return res.status(500).json({
+            status: "error",
+            message: "Unable to generate an answer.",
+        });
+    }
+});
 //API endpoint to retrive LIibrary
 app.get("/api/projects", (req, res) => {
     try {
@@ -545,6 +701,15 @@ app.get("/api/projects", (req, res) => {
             name: project.name,
             createdAt: project.createdAt,
             isActive: project.id === activeProjectId,
+
+            indexingStatus: project.indexingStatus || "pending",
+
+            indexedChunkCount: project.indexedChunkCount || 0,
+
+            indexedAt: project.indexedAt || null,
+
+            indexingError: project.indexingError || null,
+
         }));
 
         return res.json({
@@ -561,6 +726,171 @@ app.get("/api/projects", (req, res) => {
     }
 });
 //
+//START PROJECT INDEXING IN THE BACKGROUND - BACKGROUND INDEXING
+async function runProjectIndexing(projectId) {
+
+    try {
+
+        // Retrieve the latest project information.
+        const projects = readProjectsIndex();
+
+        const project = projects.find(
+            (item) => item.id === projectId
+        );
+
+        if (!project) {
+            throw new Error("Project not found.");
+        }
+
+        // Run the complete RAG indexing pipeline.
+        const result = await indexProject(project);
+
+        // Retrieve the latest registry again.
+        const updatedProjects = readProjectsIndex();
+
+        const savedProject = updatedProjects.find(
+            (item) => item.id === projectId
+        );
+
+        if (!savedProject) {
+            throw new Error("Project no longer exists.");
+        }
+
+        // Update indexing information.
+        savedProject.indexingStatus =
+            result.status === "empty" ? "empty" : "indexed";
+
+        savedProject.indexedChunkCount =
+            result.summary.embeddedChunks || 0;
+
+        savedProject.indexedFileCount =
+            result.summary.extractedFiles || 0;
+
+        savedProject.indexedAt = new Date().toISOString();
+
+        savedProject.indexingError = null;
+
+        savedProject.indexingStage = null;
+
+        savedProject.partialChunksStored = 0;
+
+        writeProjectsIndex(updatedProjects);
+
+        console.log(
+            `Project indexing completed: ${projectId}`
+        );
+
+    } catch (error) {
+
+        console.error("Project indexing failed:", error);
+
+        // Mark the project as failed.
+        try {
+
+            const projects = readProjectsIndex();
+
+            const project = projects.find(
+                (item) => item.id === projectId
+            );
+
+            if (project) {
+
+                project.indexingStatus = "failed";
+
+                project.indexingError = error.message;
+
+                project.indexingStage =
+                    error.indexingStage || null;
+
+                project.partialChunksStored =
+                    error.partialChunksStored || 0;
+
+                writeProjectsIndex(projects);
+
+            }
+
+        } catch (statusError) {
+
+            console.error(
+                "Unable to update indexing status:",
+                statusError
+            );
+
+        }
+
+    } finally {
+
+        // Allow future indexing requests.
+        indexingProjects.delete(projectId);
+
+    }
+}
+
+
+// API endpoint to start indexing.
+app.post("/api/projects/:id/index", (req, res) => {
+
+    try {
+
+        const projectId = req.params.id;
+
+        const projects = readProjectsIndex();
+
+        const project = projects.find(
+            (item) => item.id === projectId
+        );
+
+        // Check whether the project exists.
+        if (!project) {
+            return res.status(404).json({
+                status: "error",
+                message: "Project not found.",
+            });
+        }
+
+        // Mark the project as indexing.
+        project.indexingStatus = "indexing";
+        project.indexingStartedAt = new Date().toISOString();
+        project.indexingError = null;
+        project.indexingStage = null;
+        project.partialChunksStored = 0;
+
+        writeProjectsIndex(projects);
+
+        // Register the background task.
+        indexingProjects.add(projectId);
+
+        // Start indexing without waiting for completion.
+        void runProjectIndexing(projectId);
+
+        // Respond immediately.
+        return res.status(202).json({
+
+            status: "accepted",
+
+            message: "Project indexing has started.",
+
+            projectId,
+
+            indexingStatus: "indexing",
+
+        });
+
+    } catch (error) {
+
+        console.error("Unable to start project indexing:", error);
+
+        return res.status(500).json({
+
+            status: "error",
+
+            message: "Unable to start project indexing.",
+
+        });
+
+    }
+
+});
 //  RENAME A SAVED PROJECT
 
 app.patch("/api/projects/:id/rename", (req, res) => {

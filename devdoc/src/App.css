@@ -268,6 +268,66 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+/* Project Library entry */
+
+.project-library-entry {
+  width: 100%;
+}
+
+/* Indexing controls */
+
+.project-index-control {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0 8px 10px 34px;
+}
+
+/* Analyze Codebase button */
+
+.project-index-button {
+  padding: 6px 10px;
+  border: 1px solid #343b4a;
+  border-radius: 5px;
+  background: #232a38;
+  color: #cbd5e1;
+  font-size: 11px;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.project-index-button:hover:not(:disabled) {
+  background: #30394b;
+  border-color: #64748b;
+}
+
+.project-index-button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+/* Indexing status */
+
+.project-index-status {
+  font-size: 11px;
+}
+
+.status-indexing {
+  color: #fbbf24;
+}
+
+.status-indexed {
+  color: #86efac;
+}
+
+.status-failed {
+  color: #fca5a5;
+}
+
+.status-empty {
+  color: #aeb6c8;
+}
 /*WORKSPACE STYLING*/
 .workspace {
   min-width: 0;

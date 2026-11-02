@@ -18,6 +18,7 @@ function App() {
   const [uploadError, setUploadError] = useState("");
   const[projects, setProjects] = useState([]);
   const [deletingProjectId, setDeletingProjectId] = useState(null);
+  const [startingIndexProjectIds, setStartingIndexProjectIds] = useState([]);
 
   //fetch file function
   const fetchFiles = useCallback(async () => {
@@ -200,6 +201,59 @@ const handleDeleteProject = async (project) => {
     setDeletingProjectId(null);
   }
 };
+// START PROJECT INDEXING
+const handleIndexProject = async (project) => {
+
+  // Prevent duplicate requests from the frontend.
+  if (
+    project.indexingStatus === "indexing") {
+    return;
+  }
+
+  setStartingIndexProjectIds((previous) => [
+    ...previous,
+    project.id,
+  ]);
+
+  try {
+
+    const response = await fetch(
+      `http://localhost:5000/api/projects/${encodeURIComponent(project.id)}/index`,
+      {
+        method: "POST",
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.message || "Unable to start project indexing."
+      );
+    }
+
+    // Refresh the library to get the new indexing status.
+    await fetchProjects();
+
+  } catch (error) {
+
+    console.error("Project indexing request failed:", error);
+
+    window.alert(
+      error.message || "Unable to start indexing."
+    );
+
+    await fetchProjects();
+
+  } finally {
+
+    // Re-enable the button after the request is accepted or fails.
+    setStartingIndexProjectIds((previous) =>
+      previous.filter((id) => id !== project.id)
+    );
+
+  }
+};
 
   useEffect(() => {
     fetchFiles();
@@ -209,7 +263,31 @@ const handleDeleteProject = async (project) => {
   fetchProjects();
 }, [fetchProjects]);
 
-  // sending uploaded files to backend
+
+// Check whether any project is currently indexing.
+const hasIndexingProjects = projects.some(
+  (project) => project.indexingStatus === "indexing"
+);
+
+// Automatically refresh the Project Library during indexing.
+useEffect(() => {
+
+  if (!hasIndexingProjects) return;
+
+  const intervalId = window.setInterval(() => {
+    fetchProjects();
+  }, 2000);
+
+  // Stop polling when indexing finishes or the component unmounts.
+  return () => {
+    window.clearInterval(intervalId);
+  };
+
+}, [hasIndexingProjects, fetchProjects]);
+
+
+
+// SENDING UPLOADED FILES TO BACKEND
 const handleUpload = async () => {
   if (!selectedZip || isUploading) return;
 
@@ -454,59 +532,136 @@ useEffect(() => {
             </p>
           ) : (
            <div className="project-library-list">
-              {projects.map((project) => (
-                <div key={project.id} className="project-library-row">
+              {projects.map((project) => {
 
-                  {/* Button to switch projects */}
-                  <button
-                    type="button"
-                    className={`project-library-item ${
-                      project.isActive ? "active-project" : ""
-                    }`}
-                    onClick={() => handleSwitchProject(project.id)}
-                    disabled={project.isActive}
-                    title={project.name}
-                  >
-                    <span className="project-library-icon">📁</span>
+                const status = project.indexingStatus || "pending";
 
-                    <span className="project-library-name">
-                      {project.name}
-                    </span>
+                const isStarting = startingIndexProjectIds.includes(
+                  project.id
+                );
 
-                    {project.isActive && (
-                      <span className="active-project-indicator">
-                        Active
+                return (
+                  <div key={project.id} className="project-library-entry">
+
+                    {/* Existing project management controls */}
+                    <div className="project-library-row">
+
+                      {/* Switch project */}
+                      <button
+                        type="button"
+                        className={`project-library-item ${
+                          project.isActive ? "active-project" : ""
+                        }`}
+                        onClick={() => handleSwitchProject(project.id)}
+                        disabled={project.isActive}
+                        title={project.name}
+                      >
+                        <span className="project-library-icon">📁</span>
+
+                        <span className="project-library-name">
+                          {project.name}
+                        </span>
+
+                        {project.isActive && (
+                          <span className="active-project-indicator">
+                            Active
+                          </span>
+                        )}
+                      </button>
+
+                      {/* Rename project */}
+                      <button
+                        type="button"
+                        className="project-rename-button"
+                        onClick={() => handleRenameProject(project)}
+                        title={`Rename ${project.name}`}
+                        aria-label={`Rename ${project.name}`}
+                      >
+                        ✎
+                      </button>
+
+                      {/* Delete project */}
+                      <button
+                        type="button"
+                        className="project-delete-button"
+                        onClick={() => handleDeleteProject(project)}
+                        disabled={deletingProjectId === project.id}
+                        title={`Delete ${project.name}`}
+                        aria-label={`Delete ${project.name}`}
+                      >
+                        {deletingProjectId === project.id ? "..." : "×"}
+                      </button>
+
+                    </div>
+
+                    {/* Project indexing controls */}
+                    <div className="project-index-control">
+
+                     {status === "indexing" ? (
+
+                      <span className="project-index-status status-indexing">
+                        ⏳ Indexing...
                       </span>
-                    )}
-                 </button>
 
-                  {/* Button to rename the project */}
-                 <button
-                   type="button"
-                   className="project-rename-button"
-                   onClick={() => handleRenameProject(project)}
-                   title={`Rename ${project.name}`}
-                   aria-label={`Rename ${project.name}`}
-                  >
-                  ✎
-                  </button>
+                     ) : status === "indexed" ? (
+                      <>
+                        <span className="project-index-status status-indexed">
+                          ✓ Indexed ({project.indexedChunkCount ?? 0} chunks)
+                        </span>
 
-                  {/* Delete project */} 
-                  <button 
-                    type="button"
-                    className="project-delete-button"
-                    onClick={() => handleDeleteProject(project)}
-                    disabled={deletingProjectId === project.id}
-                    title={`Delete ${project.name}`}
-                    aria-lable={`Delete ${project.name}`}
-                  >
-                     {deletingProjectId === project.id ? "..." : "×"}
-                  </button>
+                        <button
+                          type="button"
+                          className="project-index-button"
+                          onClick={() => handleIndexProject(project)}
+                          disabled={isStarting}
+
+                        >
+                          {isStarting ? "Starting..." : "Re-index"}
+                        </button>
+                      </>
+                      ) : (
+                     <>
+
+                      {status === "failed" && (
+                        <span
+                          className="project-index-status status-failed"
+                          title={project.indexingError || "Indexing failed"}
+                        >
+                          Indexing failed
+                        </span>
+                      )}
+
+                      {status === "empty" && (
+                        <span className="project-index-status status-empty">
+                          No indexable chunks found.
+                        </span>
+                      )}
+
+                      <button
+                        type="button"
+                        className="project-index-button"
+                        onClick={() => handleIndexProject(project)}
+                        disabled={isStarting}
+                      >
+                        {isStarting
+                          ? "Starting..."
+                          : status === "failed"
+                          ? "Retry indexing"
+                          : status === "empty"
+                          ? "Try again"
+                          : "Analyze Codebase"}
+                      </button>
+
+                    </>
+                  )}
 
                 </div>
-              ))} 
-            </div>
-          )}
+
+              </div>
+            );
+          })}
+          </div>
+        )}
         </div>
           <p>EXPLORER</p>
           {hasActiveProject === null ? (
