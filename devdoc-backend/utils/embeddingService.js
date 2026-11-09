@@ -2,6 +2,8 @@
 
 const MODEL_NAME = "gemini-embedding-2";
 const EMBEDDING_DIMENSIONS = 768;
+const MAX_EMBEDDING_RETRIES = 3;
+const DEFAULT_RETRY_DELAY_MS = 60000;
 
 //Keep one Gemini client instead of creating a new one
 //for every chunk.
@@ -24,6 +26,55 @@ async function getGeminiClient() {
         });
     }
     return geminiClient;
+}
+function getRetryDelay(error, attempt) {
+    const message = error.message || "";
+
+    // Try to extract Google's suggested retry delay.
+    const retryMatch = message.match(/retryDelay["']?\s*:\s*["'](\d+)s/);
+
+    if (retryMatch) {
+        return Number(retryMatch[1]) * 1000;
+    }
+
+    // Fallback: exponential delay.
+    return DEFAULT_RETRY_DELAY_MS * attempt;
+}
+
+function isQuotaError(error) {
+    const message = error.message || "";
+
+    return (
+        error.status === 429 ||
+        error.code === 429 ||
+        /RESOURCE_EXHAUSTED|quota exceeded|rate limit/i.test(message)
+    );
+}
+
+async function generateEmbeddingWithRetry(ai, inputText) {
+    for (let attempt = 1; attempt <= MAX_EMBEDDING_RETRIES + 1; attempt++) {
+        try {
+            return await ai.models.embedContent({
+                model: MODEL_NAME,
+                contents: inputText,
+                config: {
+                    outputDimensionality: EMBEDDING_DIMENSIONS,
+                },
+            });
+        } catch (error) {
+            if (!isQuotaError(error) || attempt > MAX_EMBEDDING_RETRIES) {
+                throw error;
+            }
+
+            const delay = getRetryDelay(error, attempt);
+
+            console.log(
+                `[EMBEDDING] Quota limit reached. Retrying in ${Math.ceil(delay / 1000)} seconds.`
+            );
+
+            await new Promise(resolve => setTimeout(resolve, delay));
+        }
+    }
 }
 //Prepare code chunk for Gemini.
 function formatChunkForEmbedding(chunk) {
@@ -66,15 +117,7 @@ async function generateEmbeddingForChunk(chunk) {
     //Prepare the document im Gemini's recommended format.
     const inputText = formatChunkForEmbedding(chunk);
     // Request an embedding from Gemini.
-    const response = await ai.models.embedContent({
-        model: MODEL_NAME,
-
-        contents: inputText,
-
-        config: {
-            outputDimensionality: EMBEDDING_DIMENSIONS,
-        },
-    });
+    const response = await generateEmbeddingWithRetry(ai, inputText);
 
     //Extract the numerical vector.
     const embedding = response.embeddings?.[0]?.values;
@@ -136,17 +179,7 @@ async function generateQueryEmbedding(query) {
         `task: code retrieval | query: ${query.trim()}`;
 
     // Request the query embedding.
-    const response = await ai.models.embedContent({
-
-        model: MODEL_NAME,
-
-        contents: inputText,
-
-        config: {
-            outputDimensionality: EMBEDDING_DIMENSIONS,
-        },
-
-    });
+    const response = await generateEmbeddingWithRetry(ai, inputText);
 
     // Extract the numerical vector.
     const embedding = response.embeddings?.[0]?.values;

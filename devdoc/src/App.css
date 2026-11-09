@@ -1,9 +1,10 @@
 .app {
   min-height: 100vh;
   display: grid;
-  grid-template-columns: 240px 1fr 320px;
+  grid-template-columns: 240px minmax(0,1fr) 320px;
   background-color: #0f1117;
   color: #e5e7eb;
+  overflow: hidden;
 }
 /*SIDEBAR STYLING*/
 .sidebar {
@@ -11,6 +12,8 @@
   color: #e5e7eb;
   border-right: 1px solid #292c36;
   padding: 20px;
+  min-width: 0;
+  overflow-x: hidden;
 }
 .sidebar h2 {
   margin-bottom: 10px;
@@ -42,6 +45,8 @@
 .file-item {
   display: block;
   width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   padding: 8px 10px;
   background: transparent;
   border: none;
@@ -50,6 +55,9 @@
   text-align: left;
   font-size: 13px;
   cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: elipsis;
 }
 .file-item:hover {
   background-color: #22252f;

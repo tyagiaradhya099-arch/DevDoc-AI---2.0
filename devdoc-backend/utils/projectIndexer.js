@@ -16,6 +16,51 @@ const { storeEmbeddedChunks,
 
 // Configuration
 const STORAGE_BATCH_SIZE = 10;
+// Stay below Gemini's 30,000 tokens/minute free-tier limit.
+const EMBEDDING_TOKEN_BUDGET = 24000;
+const EMBEDDING_WINDOW_MS = 60 * 1000;
+
+function createTokenRateLimiter() {
+    const requests = [];
+
+    return async function waitForCapacity(tokenCount) {
+        while (true) {
+            const now = Date.now();
+
+            // Remove requests older than one minute.
+            while (
+                requests.length > 0 &&
+                now - requests[0].timestamp >= EMBEDDING_WINDOW_MS
+            ) {
+                requests.shift();
+            }
+
+            const usedTokens = requests.reduce(
+                (total, request) => total + request.tokens,
+                0
+            );
+
+            if (usedTokens + tokenCount <= EMBEDDING_TOKEN_BUDGET) {
+                requests.push({
+                    timestamp: Date.now(),
+                    tokens: tokenCount,
+                });
+
+                return;
+            }
+
+            const waitTime =
+                EMBEDDING_WINDOW_MS -
+                (now - requests[0].timestamp) + 250;
+
+            console.log(
+                `[INDEXER] Token budget reached. Waiting ${Math.ceil(waitTime / 1000)} seconds.`
+            );
+
+            await new Promise(resolve => setTimeout(resolve, waitTime));
+        }
+    };
+}
 
 
 // Main indexing function
@@ -130,11 +175,16 @@ async function indexProject(project, options = {}) {
         // STEP 5: Generate embeddings.
         currentStage = "embedding generation";
 
+        const waitForEmbeddingCapacity = createTokenRateLimiter();
+
         let batch = [];
 
         for (let i = 0; i < validatedChunks.length; i++) {
 
             const chunk = validatedChunks[i];
+
+            // Wait until sufficient token capacity is available.
+            await waitForEmbeddingCapacity(chunk.tokenCount);
 
             // Generate one embedding at a time.
             const embeddedChunk = await generateEmbeddingForChunk(chunk);
