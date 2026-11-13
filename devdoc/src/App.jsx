@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
+import AIChat from "./components/AIChat/AIChat";
+import CodeEditor from "./components/CodeEditor/CodeEditor";
+import FileExplorer from "./components/FileExplorer/FileExplorer";
 import "./App.css";
 
 function App() {
   const[files, setFiles] = useState([]);
   const[selectedFile, setSelectedFile] = useState(null);
   const[fileContent, setFileContent] = useState("");// 🚀 ACTUAL PROJECT CODE
-  const[collapsedFolders, setCollapsedFolders] = useState({});
   const[filesLoading, setFilesLoading] = useState(true);
   const[filesError, setFilesError] = useState("");
   const[fileLoading, setFileLoading] = useState(false);
@@ -440,95 +442,7 @@ useEffect(() => {
       setHasActiveProject(null);
     });
 }, []);
-      //for tree structure of the file explorer
-
-      const buildFileTree = (files) => {
-        const root = {};
-
-        files.forEach((file) => { 
-          const parts = file.split("/");
-          let current = root;
-
-          parts.forEach((part, index) => {
-            if(!current[part]) {
-              current[part] = index === parts.length - 1 ? null : {};
-            }
-
-            if(index < parts.length - 1) {
-              current = current[part];
-            }
-          });
-
-        });
-        return root;
-      }
-      const fileTree = buildFileTree(files);
-
-      
-        const getFileIcon = (fileName) => {
-          const extension = fileName.split(".").pop().toLowerCase();
-
-          const icons = {
-            js: "🟨",
-            jsx: "⚛️",
-            css: "🎨",
-            html: "🌐",
-            json: "📦",
-            md: "📝",
-          };
-
-          return icons[extension] || "📄";
-        };
-
-      const renderTree = (tree, parentPath = "") => {
-        return Object.entries(tree).map(([name, children]) => {
-          
-          const fullPath = parentPath ? `${parentPath}/${name}` : name;
-
-          if(children === null) {
-            return (
-              <button 
-                className={`file-item ${selectedFile === fullPath ? "active" : ""}`}
-                key={fullPath} 
-                style={{
-                 paddingLeft: "10px",
-                }}
-                onClick={() => setSelectedFile(fullPath)} 
-              >
-                {getFileIcon(name)} {name}
-              </button>
-            );
-          }
-          return (
-            <div key={fullPath}>
-              <button 
-              type="button" 
-              className="folder-item"
-              style={{
-                paddingLeft: "10px",
-              }}
-              onClick={() => {
-                setCollapsedFolders((previous) => ({
-                  ...previous,
-                  [fullPath]: !previous[fullPath],
-                }));
-              }}
-              >
-                <span>{collapsedFolders[fullPath] ? ">" : "⌄"}</span>
-                <span>📁 {name}</span>
-              </button>
-
-              {!collapsedFolders[fullPath] && (
-                <div className="tree-children">
-                  {renderTree(children, fullPath)}
-                </div>
-              )}
-              
-            </div>
-          );
-        });
-      };
-      //complete
+       
   return (
     <div className="app">
       <aside className="sidebar">
@@ -725,27 +639,15 @@ useEffect(() => {
           </div>
         )}
         </div>
-          <p>EXPLORER</p>
-          {hasActiveProject === null ? (
-            <p className="explorer-status">Checking project...</p>
-          ) : !hasActiveProject ? (
-            <p className="explorer-status">
-              No project loaded. Import a ZIP to explore its files.
-            </p>
-          ) : filesLoading ? (
-            <p className="explorer-status">Loading project files...</p>
-          ) : filesError ? (
-            <div className="explorer-error">
-              <p>{filesError}</p>
-              <button type="button" onClick={fetchFiles}>
-                Retry
-              </button>
-            </div>
-         ) : files.length === 0 ? (
-            <p className="explorer-status">No files found.</p>
-         ) : (
-            renderTree(fileTree)
-         )}
+          <FileExplorer
+            files={files}
+            selectedFile={selectedFile}
+            onSelectFile={setSelectedFile}
+            filesLoading={filesLoading}
+            filesError={filesError}
+            hasActiveProject={hasActiveProject}
+            fetchFiles={fetchFiles}
+          />
         </div>
       </aside>
 
@@ -754,140 +656,20 @@ useEffect(() => {
           <h1>Code Workspace</h1>
           <p>Explore and understand your project's source code.</p>
         </div>
-        {selectedFile ? (
-          <div className="code-editor">
-            <div className="editor-header">
-              <span className="editor-filename">📄 {selectedFile}</span>
-            </div>
-
-            {fileLoading ? (
-              <p className="explorer-status">Loading file contents...</p>
-            ) : fileError ? (
-              <p className="explorer-error">{fileError}</p>
-            ) : (
-              <div className="editor-content">
-                <div className="line-numbers">
-                  {fileContent.split("\n").map((_, index) => (
-                    <div key={index}>{index + 1}</div>
-                  ))}
-               </div>
-
-                <pre>
-                  <code>{fileContent}</code>
-                </pre>
-              </div>
-            )}
-          </div>
-        ) : (
-          <h1 className="welcome-heading">Welcome to DevDoc</h1>
-        )}
+        <CodeEditor
+          selectedFile={selectedFile}
+          fileContent={fileContent}
+          fileLoading={fileLoading}
+          fileError={fileError}
+        />
       </main>
-      <aside className="ai-panel">
-
-        <h2>DevDoc AI</h2>
-        <p>Ask questions about your codebase.</p>
-
-        <div className="chat-container">
-
-          {/* Show welcome message when chat is empty */}
-          {chatMessages.length === 0 ? (
-
-            <div className="chat-empty-state">
-              <p>💬</p>
-              <h3>Understand your code</h3>
-              <p>Ask a question to explore your codebase.</p>
-            </div>
-
-          ) : (
-
-            /* Display conversation history */
-            <div className="chat-messages">
-
-              {chatMessages.map((message, index) => (
-
-                <div
-                  key={`${message.role}-${index}`}
-                  className={`chat-message ${message.role}-message`}
-                >
-
-                  <strong>
-                    {message.role === "user"
-                      ? "You"
-                      : message.role === "assistant"
-                      ? "DevDoc"
-                      : "Error"}
-                  </strong>
-
-                  <div className="chat-message-content">
-                    {message.content}
-                  </div>
-
-                  {/* Display source files for AI answers */}
-                  {message.role === "assistant" &&
-                  message.sources?.length > 0 && (
-
-                    <div className="chat-sources">
-
-                      <strong>Sources:</strong>
-
-                      {message.sources.map((source, sourceIndex) => (
-
-                        <div key={`${source.filePath}-${sourceIndex}`}>
-                          📄 {source.filePath}
-                          <small>
-                            Lines {source.startLine}–{source.endLine}
-                          </small>
-                        </div>
-
-                      ))}
-
-                    </div>
-                  )}
-
-                </div>
-
-              ))}
-
-              {isSendingMessage && (
-                <div className="chat-loading">
-                  DevDoc is thinking...
-                </div>
-              )}
-
-            </div>
-
-          )}
-
-          {/* Chat input */}
-          <div className="chat-input-area">
-
-            <textarea
-              placeholder="Ask DevDoc anything..."
-              rows={3}
-              value={chatInput}
-              onChange={(event) => setChatInput(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" && !event.shiftKey) {
-                  event.preventDefault();
-                  handleSendMessage();
-                }
-              }}
-              disabled={isSendingMessage}
-            />
-
-            <button
-              type="button"
-              onClick={handleSendMessage}
-              disabled={!chatInput.trim() || isSendingMessage}
-            >
-              {isSendingMessage ? "..." : "↑"}
-            </button>
-
-          </div>
-
-        </div>
-
-      </aside>
+      <AIChat
+        chatMessages={chatMessages}
+        chatInput={chatInput}
+        setChatInput={setChatInput}
+        handleSendMessage={handleSendMessage}
+        isSendingMessage={isSendingMessage}
+      />
       
     </div>  
   );
