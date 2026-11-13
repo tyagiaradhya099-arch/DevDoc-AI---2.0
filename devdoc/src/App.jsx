@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from "react";
 import AIChat from "./components/AIChat/AIChat";
 import CodeEditor from "./components/CodeEditor/CodeEditor";
 import FileExplorer from "./components/FileExplorer/FileExplorer";
+import ProjectLibrary from "./components/ProjectLibrary/ProjectLibrary";
+import ProjectUpload from "./components/ProjectUpload/ProjectUpload";
 import "./App.css";
 
 function App() {
@@ -454,201 +456,33 @@ useEffect(() => {
           <h3 className="project-name">
             {hasActiveProject ? `📁 ${projectName}`:"📁 No project loaded" } 
           </h3>
-           {/* Minimal upload interface */}
-          <div className="project-upload">
-            <input
-              id="project-zip"
-              className="upload-input"
-              type="file"
-              accept=".zip,application/zip"
-              onChange={(event) => {
-                setSelectedZip(event.target.files?.[0] ?? null);
-                setUploadMessage("");
-                setUploadError("");
-             }}
-           />
-
-           <label htmlFor="project-zip" className="upload-trigger">
-             <span className="upload-plus">+</span>
-             Import project
-           </label>
-
-           {selectedZip && (
-            <div className="upload-selected">
-              <span className="selected-file-name">{selectedZip.name}</span>
-
-              <button
-                type="button"
-                className="upload-action"
-                onClick={handleUpload}
-                disabled={isUploading}
-              >
-                {isUploading ? "Uploading..." : "Upload"}
-              </button>
-           </div>
-         )}
-
-         {uploadMessage && (
-            <p className="upload-feedback">{uploadMessage}</p>
-         )}
-
-         {uploadError && (
-           <p className="upload-feedback upload-feedback-error">
-              {uploadError}
-           </p>
-          )}
-        </div>
-        {/*PROJECT LIBRARY*/}
-        <div className="project-library">
-          <p className="section-label">MY PROJECTS</p>
-
-          {projects.length === 0 ? (
-            <p className="explorer-status">
-              No saved projects yet.
-            </p>
-          ) : (
-           <div className="project-library-list">
-              {projects.map((project) => {
-
-                const status = project.indexingStatus || "pending";
-
-                const isStarting = startingIndexProjectIds.includes(
-                  project.id
-                );
-
-                return (
-                  <div key={project.id} className="project-library-entry">
-
-                    {/* Existing project management controls */}
-                    <div className="project-library-row">
-
-                      {/* Switch project */}
-                      <button
-                        type="button"
-                        className={`project-library-item ${
-                          project.isActive ? "active-project" : ""
-                        }`}
-                        onClick={() => handleSwitchProject(project.id)}
-                        disabled={project.isActive}
-                        title={project.name}
-                      >
-                        <span className="project-library-icon">📁</span>
-
-                        <span className="project-library-name">
-                          {project.name}
-                        </span>
-
-                        {project.isActive && (
-                          <span className="active-project-indicator">
-                            Active
-                          </span>
-                        )}
-                      </button>
-
-                      {/* Rename project */}
-                      <button
-                        type="button"
-                        className="project-rename-button"
-                        onClick={() => handleRenameProject(project)}
-                        title={`Rename ${project.name}`}
-                        aria-label={`Rename ${project.name}`}
-                      >
-                        ✎
-                      </button>
-
-                      {/* Delete project */}
-                      <button
-                        type="button"
-                        className="project-delete-button"
-                        onClick={() => handleDeleteProject(project)}
-                        disabled={deletingProjectId === project.id}
-                        title={`Delete ${project.name}`}
-                        aria-label={`Delete ${project.name}`}
-                      >
-                        {deletingProjectId === project.id ? "..." : "×"}
-                      </button>
-
-                    </div>
-
-                    {/* Project indexing controls */}
-                    <div className="project-index-control">
-
-                     {status === "indexing" ? (
-
-                      <span className="project-index-status status-indexing">
-                        ⏳ Indexing...
-                      </span>
-
-                     ) : status === "indexed" ? (
-                      <>
-                        <span className="project-index-status status-indexed">
-                          ✓ Indexed ({project.indexedChunkCount ?? 0} chunks)
-                        </span>
-
-                        <button
-                          type="button"
-                          className="project-index-button"
-                          onClick={() => handleIndexProject(project)}
-                          disabled={isStarting}
-
-                        >
-                          {isStarting ? "Starting..." : "Re-index"}
-                        </button>
-                      </>
-                      ) : (
-                     <>
-
-                      {status === "failed" && (
-                        <span
-                          className="project-index-status status-failed"
-                          title={project.indexingError || "Indexing failed"}
-                        >
-                          Indexing failed
-                        </span>
-                      )}
-
-                      {status === "empty" && (
-                        <span className="project-index-status status-empty">
-                          No indexable chunks found.
-                        </span>
-                      )}
-
-                      <button
-                        type="button"
-                        className="project-index-button"
-                        onClick={() => handleIndexProject(project)}
-                        disabled={isStarting}
-                      >
-                        {isStarting
-                          ? "Starting..."
-                          : status === "failed"
-                          ? "Retry indexing"
-                          : status === "empty"
-                          ? "Try again"
-                          : "Analyze Codebase"}
-                      </button>
-
-                    </>
-                  )}
-
-                </div>
-
-              </div>
-            );
-          })}
-          </div>
-        )}
-        </div>
-          <FileExplorer
-            files={files}
-            selectedFile={selectedFile}
-            onSelectFile={setSelectedFile}
-            filesLoading={filesLoading}
-            filesError={filesError}
-            hasActiveProject={hasActiveProject}
-            fetchFiles={fetchFiles}
+          <ProjectUpload
+            selectedZip={selectedZip}
+            setSelectedZip={setSelectedZip}
+            isUploading={isUploading}
+            uploadMessage={uploadMessage}
+            uploadError={uploadError}
+            handleUpload={handleUpload}
           />
-        </div>
+        </div>  
+        <ProjectLibrary
+          projects={projects}
+          startingIndexProjectIds={startingIndexProjectIds}
+          deletingProjectId={deletingProjectId}
+          handleSwitchProject={handleSwitchProject}
+          handleRenameProject={handleRenameProject}
+          handleDeleteProject={handleDeleteProject}
+          handleIndexProject={handleIndexProject}
+        />
+        <FileExplorer
+          files={files}
+          selectedFile={selectedFile}
+          onSelectFile={setSelectedFile}
+          filesLoading={filesLoading}
+          filesError={filesError}
+          hasActiveProject={hasActiveProject}
+          fetchFiles={fetchFiles}
+        />
       </aside>
 
       <main className="workspace">
