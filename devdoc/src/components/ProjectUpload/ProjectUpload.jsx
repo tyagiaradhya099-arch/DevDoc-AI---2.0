@@ -19,8 +19,21 @@ function ProjectUpload({
       />
 
       <label htmlFor="project-zip" className="upload-trigger">
-        <span className="upload-plus">+</span>
-        Import project
+        <svg
+          className="upload-icon"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M12 16V4" />
+          <path d="M7 9l5-5 5 5" />
+          <path d="M4 16v3a1 1 0 001 1h14a1 1 0 001-1v-3" />
+        </svg>
+
+        <span>Import project</span>
       </label>
 
       {selectedZip && (

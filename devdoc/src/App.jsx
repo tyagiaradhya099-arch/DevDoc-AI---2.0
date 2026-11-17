@@ -1,12 +1,16 @@
 import { useCallback, useEffect, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import AIChat from "./components/AIChat/AIChat";
 import CodeEditor from "./components/CodeEditor/CodeEditor";
 import FileExplorer from "./components/FileExplorer/FileExplorer";
 import ProjectLibrary from "./components/ProjectLibrary/ProjectLibrary";
 import ProjectUpload from "./components/ProjectUpload/ProjectUpload";
+import AppLayout from "./layouts/AppLayout";
 import "./App.css";
 
 function App() {
+  const location = useLocation();
+  const navigate = useNavigate();
   const[files, setFiles] = useState([]);
   const[selectedFile, setSelectedFile] = useState(null);
   const[fileContent, setFileContent] = useState("");// 🚀 ACTUAL PROJECT CODE
@@ -220,6 +224,24 @@ const handleRenameProject = async (project) => {
     window.alert(error.message || "Unable to rename project.");
   }
 };
+// Handle rename requests coming from the Projects page.
+useEffect(() => {
+  if (location.state?.action !== "rename") return;
+
+  const project = projects.find(
+    (item) => item.id === location.state.projectId
+  );
+
+  if (!project) return;
+
+  // Clear navigation state so the prompt doesn't appear again.
+  navigate(location.pathname, {
+    replace: true,
+    state: null,
+  });
+
+  handleRenameProject(project);
+}, [location.state, location.pathname, projects, navigate]);
 //  DELETE A SAVED PROJECT
 const handleDeleteProject = async (project) => {
   // Ask for confirmation before permanently deleting files.
@@ -267,6 +289,24 @@ const handleDeleteProject = async (project) => {
     setDeletingProjectId(null);
   }
 };
+// Handle delete requests coming from the Projects page.
+useEffect(() => {
+  if (location.state?.action !== "delete") return;
+
+  const project = projects.find(
+    (item) => item.id === location.state.projectId
+  );
+
+  if (!project) return;
+
+  // Clear navigation state to prevent repeated deletion prompts.
+  navigate(location.pathname, {
+    replace: true,
+    state: null,
+  });
+
+  handleDeleteProject(project);
+}, [location.state, location.pathname, projects, navigate]);
 // START PROJECT INDEXING
 const handleIndexProject = async (project) => {
 
@@ -320,6 +360,23 @@ const handleIndexProject = async (project) => {
 
   }
 };
+// Handle indexing requests coming from the Projects page.
+useEffect(() => {
+  if (location.state?.action !== "index") return;
+
+  const project = projects.find(
+    (item) => item.id === location.state.projectId
+  );
+
+  if (!project) return;
+
+  navigate(location.pathname, {
+    replace: true,
+    state: null,
+  });
+
+  handleIndexProject(project);
+}, [location.state, location.pathname, projects, navigate]);
 
   useEffect(() => {
     fetchFiles();
@@ -446,16 +503,26 @@ useEffect(() => {
 }, []);
        
   return (
-    <div className="app">
+    <AppLayout>
       <aside className="sidebar">
         <h2>Devdoc</h2>
         <p className="sidebar-subtitle">Codebase Intelligence platform</p>
+        <nav className="workspace-nav">
+           <Link to="/" className="workspace-nav-item">
+              <span>⌂</span> Overview
+           </Link> 
+
+            <Link to="/projects" className="workspace-nav-item">
+              <span>▦</span> Projects
+            </Link>
+
+           <Link to="/workspace" className="workspace-nav-item active">
+              <span>⌘</span> Workspace
+           </Link>    
+        </nav>
 
         <div className="project-section">
-          <p className="section-label">WORKSPACE</p>
-          <h3 className="project-name">
-            {hasActiveProject ? `📁 ${projectName}`:"📁 No project loaded" } 
-          </h3>
+         
           <ProjectUpload
             selectedZip={selectedZip}
             setSelectedZip={setSelectedZip}
@@ -487,8 +554,27 @@ useEffect(() => {
 
       <main className="workspace">
         <div className="workspace-header">
-          <h1>Code Workspace</h1>
-          <p>Explore and understand your project's source code.</p>
+          <div className="workspace-heading-content">
+            <div className="workspace-icon">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <rect x="3" y="4" width="18" height="16" rx="3" />
+                <path d="m9 9-3 3 3 3" />
+                <path d="m15 9 3 3-3 3" />
+              </svg>
+            </div>
+
+            <div>
+                <h1>Code Workspace</h1>
+                <p>Explore, understand and navigate your codebase.</p>
+            </div>
+          </div>
         </div>
         <CodeEditor
           selectedFile={selectedFile}
@@ -505,7 +591,7 @@ useEffect(() => {
         isSendingMessage={isSendingMessage}
       />
       
-    </div>  
+    </AppLayout>
   );
 }
 
