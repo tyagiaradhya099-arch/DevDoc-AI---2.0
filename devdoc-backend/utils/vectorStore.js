@@ -312,11 +312,126 @@ async function searchSimilarChunks(
 
     return results;
 }
+// 8. Search project chunks using keyword matching.
+async function searchChunksByKeywords(query, projectId, options = {}) {
+    if (typeof query !== "string" || !query.trim()) {
+        throw new Error("A valid search query is required.");
+    }
+
+    if (typeof projectId !== "string" || !projectId.trim()) {
+        throw new Error("A valid project ID is required.");
+    }
+
+    const limit = options.limit ?? 5;
+
+    if (!Number.isInteger(limit) || limit < 1) {
+        throw new Error("Search limit must be a positive integer.");
+    }
+
+    const table = await getCodeChunksTable();
+
+    if (!table) {
+        return [];
+    }
+
+    const safeProjectId = projectId.replace(/'/g, "''");
+
+    // Retrieve only chunks belonging to the requested project.
+    const records = await table
+        .query()
+        .where(`project_id = '${safeProjectId}'`)
+        .toArray();
+
+        // Ignore generic words that provide little code-search value.
+    const stopWords = new Set([
+        "how", "does", "the", "a", "an", "is", "are",
+        "what", "where", "when", "why", "which",
+        "application", "identify", "explain", "show",
+        "using", "from", "into", "with", "this", "that",
+        "and", "or", "to", "of", "in", "for",
+        "backend", "frontend", "database"
+    ]);
+
+    // Extract meaningful query terms.
+    const keywords = [
+        ...new Set(
+            query.toLowerCase().match(/[a-z_][a-z0-9_]*/g) || []
+        )
+    ].filter(word => word.length > 2 && !stopWords.has(word));
+
+    // Expand selected terms with related code terminology.
+    const synonyms = {
+        completion: ["complete", "completed", "done"],
+        complete: ["completion", "completed", "done"],
+        completed: ["completion", "complete", "done"],
+        status: ["done", "state"],
+        update: ["set", "modify", "change"],
+        tasks: ["task"]
+    };
+
+    const expandedKeywords = new Set(keywords);
+
+    keywords.forEach(keyword => {
+        (synonyms[keyword] || []).forEach(term => {
+            expandedKeywords.add(term);
+        });
+    });
+
+    // Extract exact code identifiers.
+    const identifiers = [
+        ...new Set(
+            query.match(
+                /\b[a-zA-Z_]\w*(?:\.[a-zA-Z_]\w*)+\b|\b[a-zA-Z_]\w*_[a-zA-Z_]\w*\b/g
+            ) || []
+        )
+    ];
+
+    const scoredResults = records.map(chunk => {
+        const content = chunk.content.toLowerCase();
+        const filePath = chunk.relative_path.toLowerCase();
+
+        // Exact identifiers receive the highest weight.
+        const identifierScore = identifiers.reduce(
+            (total, identifier) => {
+                return total +
+                    (content.includes(identifier.toLowerCase()) ? 10 : 0);
+            },
+            0
+        );
+
+        // Match meaningful and expanded keywords.
+        const keywordScore = [...expandedKeywords].reduce(
+            (total, keyword) => {
+                const escapedKeyword = keyword.replace(
+                    /[.*+?^${}()|[\]\\]/g,
+                    "\\$&"
+                );
+
+                const matches =
+                    content.match(new RegExp(`\\b${escapedKeyword}\\b`, "g")) || [];
+
+                return total + matches.length;
+            },
+            0
+        );
+
+        return {
+            ...chunk,
+            keywordScore: identifierScore + keywordScore
+        };
+    });
+
+    return scoredResults
+        .filter(chunk => chunk.keywordScore > 0)
+        .sort((a, b) => b.keywordScore - a.keywordScore)
+        .slice(0, limit);
+}        
 // Export database operations.
 module.exports = {
     getDatabase,
     storeEmbeddedChunks,
     getProjectChunkCount,
     searchSimilarChunks,
+    searchChunksByKeywords,
     deleteStaleProjectChunks,
 };

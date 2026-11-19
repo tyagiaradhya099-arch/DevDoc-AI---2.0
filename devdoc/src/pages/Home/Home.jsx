@@ -1,7 +1,29 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import "./Home.css";
 
 function Home() {
+  const navigate = useNavigate();
+
+ const handleLogout = async () => {
+    try {
+        const response = await fetch(
+            "http://localhost:5000/api/auth/logout",
+            {
+                method: "POST",
+                credentials: "include"
+            }
+        );
+
+        if (response.ok) {
+            navigate("/", { replace: true });
+        } else {
+            alert("Logout failed. Please try again.");
+        }
+    } catch (error) {
+        console.error("Logout error:", error);
+        alert("Unable to connect to the server.");
+    }
+  };
   return (
     <div className="home-page">
       {/* SIDEBAR */}
@@ -31,9 +53,15 @@ function Home() {
         </div>
 
         <div className="sidebar-bottom">
-          <span className="status-dot"></span>
-          AI Engine
-          <span className="status-text">Ready</span>
+          <div>
+            <span className="status-dot"></span>
+              AI Engine
+            <span className="status-text">Ready</span>
+          </div>
+
+          <button className="logout-button" onClick={handleLogout}>
+              ↪ Logout
+          </button>
         </div>
       </aside>
 

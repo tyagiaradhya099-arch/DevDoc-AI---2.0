@@ -5,12 +5,48 @@ require("dotenv").config({
 const express = require("express");
 const cors = require("cors");
 
+const session = require("express-session");
+const PgSession = require("connect-pg-simple")(session);
+const pool = require("./db");
+
 const app = express();
 
 const PORT= 5000;
 
 app.use(express.json());
-app.use(cors());
+
+const allowedOrigins = [
+    process.env.CLIENT_URL,
+    "http://localhost:5173",
+    "http://localhost:5174"
+].filter(Boolean);
+
+app.use(cors({
+    origin: allowedOrigins,
+    credentials: true
+}));
+
+if (process.env.NODE_ENV === "production") {
+    app.set("trust proxy", 1);
+}
+
+app.use(session({
+    store: new PgSession({
+        pool,
+        createTableIfMissing: true
+    }),
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 24 * 60 * 60 * 1000
+    }
+}));
+
+app.use("/api/auth", require("./routes/auth"));
 
 const fs = require("fs");
 const path = require("path");
@@ -151,7 +187,10 @@ function validateZipArchive(zipPath) {
                         normalizedName.startsWith("/") ||
                         /^[a-zA-Z]:/.test(normalizedName) ||
                         segments.some(
-                            (segment) => segment === "." || segment === ".."
+                            (segment) => 
+                             segment === "." ||
+                             segment === ".." || 
+                             segment.includes(":")
                         )
                     ) {
                         return fail("The ZIP contains an unsafe file path.");
@@ -404,19 +443,32 @@ function getFiles(directory) {
 
     let files = [];
 
-    for(const item of items) {
-        console.log(item);
+    for (const item of items) {
+
+        // Exclude sensitive environment files.
+        const name = item.name.toLowerCase();
+
+        if (name === ".env" || name.startsWith(".env.")) {
+            continue;
+        }
+
         const fullPath = path.join(directory, item.name);
 
-        if(item.isDirectory()) {
+        if (item.isSymbolicLink()) {
+            continue;
+        }
+
+        if (item.isDirectory()) {
             files = files.concat(getFiles(fullPath));
         }
-        else {
+        else if (item.isFile()) {
             files.push(fullPath);
         }
     }
+
     return files;
 }
+
 
 //handling projectfile listing errors
 app.get("/api/files", (req, res) => {
@@ -469,6 +521,20 @@ app.get("/api/file", (req, res) => {
         return res.status(400).json({
            status: "error",
            message: "A valid file path is required.", 
+        });
+    }
+    // Prevent access to environment files.
+    const pathParts = filePath.split(/[\\/]/);
+
+    if (
+        pathParts.some((part) => {
+            const name = part.toLowerCase();
+            return name === ".env" || name.startsWith(".env.");
+        })
+    ) {
+        return res.status(403).json({
+            status: "error",
+            message: "Access to sensitive files is not allowed.",
         });
     }
     if(!activeProjectPath) {

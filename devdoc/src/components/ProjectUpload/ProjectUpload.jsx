@@ -1,3 +1,4 @@
+import { useRef } from "react";
 function ProjectUpload({
   selectedZip,
   setSelectedZip,
@@ -6,9 +7,11 @@ function ProjectUpload({
   uploadError,
   handleUpload,
 }) {
+  const fileInputRef = useRef(null);
   return (
     <div className="project-upload">
       <input
+        ref={fileInputRef}
         id="project-zip"
         className="upload-input"
         type="file"

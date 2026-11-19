@@ -4,6 +4,8 @@ function ProjectLibrary({
   handleRenameProject,
   handleDeleteProject,
   deletingProjectId,
+  handleIndexProject,
+  startingIndexProjectIds,
 }) {
   return (
     <div className="project-library">
@@ -35,10 +37,26 @@ function ProjectLibrary({
                     {project.name}
                   </span>
 
-                  {project.isActive && (
-                    <span className="active-project-indicator">
-                      ●
+                  {project.indexingStatus === "indexed" && (
+                    <span className="project-indexed-status" title="Project indexed">
+                       ✓
                     </span>
+                  )}
+
+                  {project.indexingStatus === "indexing" && (
+                    <span className="project-indexing-status" title="Indexing in progress">
+                        ⟳
+                    </span>
+                  )}
+
+                  {project.indexingStatus === "failed" && (
+                    <span className="project-index-failed" title="Indexing failed">
+                        !
+                    </span>
+                  )}
+
+                  {project.isActive && (
+                    <span className="active-project-indicator">●</span>
                   )}
                 </button>
 
@@ -50,6 +68,26 @@ function ProjectLibrary({
                   aria-label={`Rename ${project.name}`}
                 >
                   ✎
+                </button>
+                <button
+                    type="button"
+                    className="project-index-button"
+                    onClick={() => handleIndexProject(project)}
+                    disabled={
+                        project.indexingStatus === "indexing" ||
+                        startingIndexProjectIds.includes(project.id)
+                    }
+                    title={
+                        project.indexingStatus === "indexing"
+                            ? "Indexing in progress"
+                            : "Index project"
+                    }
+                    aria-label={`Index ${project.name}`}
+                >
+                   {project.indexingStatus === "indexing" ||
+                   startingIndexProjectIds.includes(project.id)
+                        ? "⟳"
+                        : "⚡"}
                 </button>
 
                 <button

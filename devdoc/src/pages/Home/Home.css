@@ -369,3 +369,23 @@
     grid-template-columns: 1fr;
   }
 }
+.logout-button {
+    width: 100%;
+    margin-top: 18px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: var(--font-sans);
+    font-size: 12px;
+    text-align: left;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.logout-button:hover {
+    background: rgba(248, 113, 113, 0.08);
+    border-color: var(--danger);
+    color: var(--danger);
+}

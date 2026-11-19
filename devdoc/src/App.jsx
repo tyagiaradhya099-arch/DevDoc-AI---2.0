@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect,useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import AIChat from "./components/AIChat/AIChat";
 import CodeEditor from "./components/CodeEditor/CodeEditor";
@@ -30,6 +30,8 @@ function App() {
   const [chatInput, setChatInput] = useState("");
   const [chatMessages, setChatMessages] = useState([]);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
+  const [indexingToast, setIndexingToast] = useState(null);
+  const previousIndexingStatuses = useRef({});
 
   //Send a question to DevDoc AI.
   const handleSendMessage = async () => {
@@ -408,6 +410,59 @@ useEffect(() => {
 
 }, [hasIndexingProjects, fetchProjects]);
 
+//Detect indexing completion
+
+useEffect(() => {
+  projects.forEach((project) => {
+    const previousStatus =
+      previousIndexingStatuses.current[project.id];
+
+    if (
+      previousStatus === "indexing" &&
+      project.indexingStatus === "indexed"
+    ) {
+      setIndexingToast({
+        type: "success",
+        message: `Indexing completed! ${project.indexedChunkCount} chunks indexed for ${project.name}.`,
+      });
+    }
+
+    if (
+      previousStatus === "indexing" &&
+      project.indexingStatus === "empty"
+    ) {
+      setIndexingToast({
+        type: "info",
+        message: `No indexable files found in ${project.name}.`,
+      });
+    }
+
+    if (
+      previousStatus === "indexing" &&
+      project.indexingStatus === "failed"
+    ) {
+      setIndexingToast({
+        type: "error",
+        message: `Indexing failed for ${project.name}: ${
+          project.indexingError || "Unknown error"
+        }`,
+      });
+    }
+
+    previousIndexingStatuses.current[project.id] =
+      project.indexingStatus;
+  });
+}, [projects]);
+//automatic notification dismissal
+useEffect(() => {
+  if (!indexingToast) return;
+
+  const timeoutId = window.setTimeout(() => {
+    setIndexingToast(null);
+  }, 5000);
+
+  return () => window.clearTimeout(timeoutId);
+}, [indexingToast]);
 
 
 // SENDING UPLOADED FILES TO BACKEND
@@ -449,6 +504,8 @@ const handleUpload = async () => {
     setUploadError(error.message || "Unable to upload the project.");
   } finally {
     setIsUploading(false);
+    setSelectedZip(null);
+    document.getElementById("project-zip").value = "";
   }
 };
 
@@ -504,6 +561,19 @@ useEffect(() => {
        
   return (
     <AppLayout>
+      {indexingToast && (
+        <div className={`indexing-toast ${indexingToast.type}`} role="status">
+            <span>{indexingToast.message}</span>
+
+            <button
+              type="button"
+              onClick={() => setIndexingToast(null)}
+              aria-label="Dismiss notification"
+            >
+              ×
+            </button>
+         </div>
+        )}
       <aside className="sidebar">
         <h2>Devdoc</h2>
         <p className="sidebar-subtitle">Codebase Intelligence platform</p>

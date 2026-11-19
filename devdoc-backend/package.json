@@ -13,10 +13,14 @@
   "dependencies": {
     "@google/genai": "^2.32.0",
     "@lancedb/lancedb": "^0.41.0",
+    "bcryptjs": "^3.0.3",
+    "connect-pg-simple": "^10.0.0",
     "cors": "^2.8.6",
     "dotenv": "^18.0.9",
     "express": "^5.2.1",
+    "express-session": "^1.19.0",
     "multer": "^2.5.0",
+    "pg": "^8.23.1",
     "yauzl": "^3.4.0"
   },
   "overrides": {
