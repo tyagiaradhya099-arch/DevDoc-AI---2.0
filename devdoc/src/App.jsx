@@ -52,6 +52,8 @@ function App() {
     try {
       const response = await fetch("http://localhost:5000/api/chat", {
       method: "POST",
+      credentials: "include",
+
       headers: {
         "Content-Type": "application/json",
       },
@@ -98,7 +100,9 @@ function App() {
     setFilesLoading(true);
     setFilesError("");
 
-    const response = await fetch("http://localhost:5000/api/files");
+    const response = await fetch("http://localhost:5000/api/files", {
+      credentials: "include",
+    });
 
     if (!response.ok) {
       throw new Error("Failed to load project files.");
@@ -119,7 +123,9 @@ function App() {
   //to show retrieved projects from the backend
 const fetchProjects = useCallback(async () => {
   try {
-  const response = await fetch("http://localhost:5000/api/projects");
+  const response = await fetch("http://localhost:5000/api/projects",{
+  credentials: "include",
+  });
     if(!response.ok) {
        throw new Error("Failed to fetch projects.");
     }
@@ -139,6 +145,7 @@ const handleSwitchProject = async (projectId) => {
       `http://localhost:5000/api/projects/${encodeURIComponent(projectId)}/activate`,
       {
         method: "POST",
+        credentials: "include",
       }
     );
 
@@ -192,6 +199,7 @@ const handleRenameProject = async (project) => {
       `http://localhost:5000/api/projects/${encodeURIComponent(project.id)}/rename`,
       {
         method: "PATCH",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
@@ -260,6 +268,7 @@ const handleDeleteProject = async (project) => {
       `http://localhost:5000/api/projects/${encodeURIComponent(project.id)}`,
       {
         method: "DELETE",
+        credentials: "include",
       }
     );
 
@@ -329,6 +338,7 @@ const handleIndexProject = async (project) => {
       `http://localhost:5000/api/projects/${encodeURIComponent(project.id)}/index`,
       {
         method: "POST",
+        credentials: "include",
       }
     );
 
@@ -480,6 +490,7 @@ const handleUpload = async () => {
     const response = await fetch("http://localhost:5000/api/upload", {
       method: "POST",
       body: formData,
+      credentials: "include",
     });
 
     const data = await response.json();
@@ -520,7 +531,10 @@ const handleUpload = async () => {
       setFileContent("");
 
       const response = await fetch(
-        `http://localhost:5000/api/file?path=${encodeURIComponent(selectedFile)}`
+        `http://localhost:5000/api/file?path=${encodeURIComponent(selectedFile)}`,
+        {
+          credentials: "include",
+        }
       );
 
       if (!response.ok) {
@@ -541,7 +555,9 @@ const handleUpload = async () => {
 }, [selectedFile]);
 //to fetch project name from backend
 useEffect(() => {
-  fetch("http://localhost:5000/api/project")
+  fetch("http://localhost:5000/api/project",{
+    credentials: "include",
+  })
     .then((response) => {
       if (!response.ok) {
         throw new Error("Failed to fetch project information.");

@@ -225,6 +225,40 @@ async function getProjectChunkCount(projectId) {
         `project_id = '${projectId.replace(/'/g, "''")}'`
     );
 }
+// Delete all indexed chunks belonging to a project.
+async function deleteProjectChunks(projectId) {
+    if (
+        typeof projectId !== "string" ||
+        !projectId.trim()
+    ) {
+        throw new Error("A valid project ID is required.");
+    }
+
+    const table = await getCodeChunksTable();
+
+    if (!table) {
+        return {
+            status: "success",
+            projectId,
+            deletedCount: 0,
+        };
+    }
+
+    const safeProjectId = projectId.replace(/'/g, "''");
+    const filter = `project_id = '${safeProjectId}'`;
+
+    const deletedCount = await table.countRows(filter);
+
+    if (deletedCount > 0) {
+        await table.delete(filter);
+    }
+
+    return {
+        status: "success",
+        projectId,
+        deletedCount,
+    };
+}
 // Remove outdated chunks after a successful re-indexing run.
 async function deleteStaleProjectChunks(projectId, indexingStartedAt) {
 
@@ -431,6 +465,7 @@ module.exports = {
     getDatabase,
     storeEmbeddedChunks,
     getProjectChunkCount,
+    deleteProjectChunks,
     searchSimilarChunks,
     searchChunksByKeywords,
     deleteStaleProjectChunks,

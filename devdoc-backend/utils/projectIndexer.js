@@ -93,16 +93,21 @@ async function indexProject(project, options = {}) {
     }
 
     // Resolve the actual project directory.
-    const projectsRoot = path.resolve(
-        __dirname,
-        "..",
-        "user-projects"
-    );
+    const projectsRoot = path.resolve(__dirname, "..", "user-projects");
 
-    const projectPath = path.resolve(
-        projectsRoot,
-        project.folder
-    );
+    if (
+        typeof project.owner_id !== "string" ||
+        !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(project.owner_id)
+    ) {
+        throw new Error("A valid project owner ID is required.");
+    }
+
+    const userRoot = path.resolve(projectsRoot, project.owner_id);
+    const projectPath = path.resolve(userRoot, project.folder);
+
+    if (!projectPath.startsWith(userRoot + path.sep)) {
+        throw new Error("Invalid project folder path.");
+    }
 
     // Verify that the project exists.
     const projectStats = await fs.lstat(projectPath);
