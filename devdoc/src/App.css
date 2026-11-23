@@ -1121,3 +1121,61 @@
   max-height: 65vh;
   overflow: auto;
 }
+/* Sidebar Account Section */
+.sidebar-account {
+  margin-top: 18px;
+  padding: 12px 10px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--bg-secondary);
+}
+
+.sidebar-account-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.sidebar-account-info span {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.sidebar-account-info strong {
+  font-size: 13px;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.sidebar-account-info small {
+  font-size: 11px;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.sidebar-logout-btn {
+  width: 100%;
+  margin-top: 10px;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.sidebar-logout-btn:hover:not(:disabled) {
+  background: #382326;
+  border-color: #dc6b6b;
+  color: #fca5a5;
+}
+
+.sidebar-logout-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

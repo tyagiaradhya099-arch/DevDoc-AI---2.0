@@ -866,14 +866,34 @@ app.post("/api/chat", requireAuth, async (req, res) => {
             })),
         });
 
-    } catch (error) {
-        console.error("RAG response failed:", error);
+    } 
+    catch (error) {
+    console.error("RAG response failed:", error);
 
-        return res.status(500).json({
+    const errorStatus = Number(error.status || error.code);
+
+    if (errorStatus === 503) {
+        return res.status(503).json({
             status: "error",
-            message: "Unable to generate an answer.",
+            message: "DevDoc AI is temporarily unavailable due to high server demand. Please try again in a few minutes.",
+            retryable: true,
         });
     }
+
+    if (errorStatus === 429) {
+        return res.status(429).json({
+            status: "error",
+            message: "DevDoc AI has reached its request limit. Please try again later.",
+            retryable: true,
+        });
+    }
+
+    return res.status(500).json({
+        status: "error",
+        message: "Unable to generate an answer. Please try again.",
+        retryable: false,
+    });
+}
 });
 //API endpoint to retrive database
 app.get("/api/projects", requireAuth, async (req, res) => {

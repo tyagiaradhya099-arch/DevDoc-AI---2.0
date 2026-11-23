@@ -1,8 +1,30 @@
 import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 import "./Home.css";
 
 function Home() {
   const navigate = useNavigate();
+  const [currentUser, setCurrentUser] = useState(null);
+
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        const response = await fetch(
+          "http://localhost:5000/api/auth/me",
+           { credentials: "include" }
+        );
+
+        if (!response.ok) return;
+
+        const data = await response.json();
+        setCurrentUser(data.authenticated ? data.user : null);
+      } catch (error) {
+        console.error("Failed to fetch current user:", error);
+      }
+    };
+
+    fetchCurrentUser();
+  }, []);
 
  const handleLogout = async () => {
     try {
@@ -51,8 +73,16 @@ function Home() {
             Workspace
           </Link>
         </div>
+        {currentUser && (
+            <div className="home-user-info">
+              <span className="user-label">SIGNED IN AS</span>
+              <strong>{currentUser.name}</strong>
+              <small>{currentUser.email}</small>
+            </div>
+          )}
 
         <div className="sidebar-bottom">
+        
           <div>
             <span className="status-dot"></span>
               AI Engine

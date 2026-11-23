@@ -252,6 +252,7 @@ useEffect(() => {
 
   handleRenameProject(project);
 }, [location.state, location.pathname, projects, navigate]);
+
 //  DELETE A SAVED PROJECT
 const handleDeleteProject = async (project) => {
   // Ask for confirmation before permanently deleting files.
@@ -574,7 +575,7 @@ useEffect(() => {
       setHasActiveProject(null);
     });
 }, []);
-       
+     
   return (
     <AppLayout>
       {indexingToast && (
@@ -606,6 +607,7 @@ useEffect(() => {
               <span>⌘</span> Workspace
            </Link>    
         </nav>
+        
 
         <div className="project-section">
          

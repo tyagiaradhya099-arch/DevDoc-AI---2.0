@@ -47,7 +47,6 @@ function Register() {
             alert("Unable to connect to the server.");
         }
     };
-    
     return (
         <div className="register-page">
 

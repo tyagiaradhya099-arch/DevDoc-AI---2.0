@@ -389,3 +389,134 @@
     border-color: var(--danger);
     color: var(--danger);
 }
+/* SIDEBAR BOTTOM */
+.sidebar-bottom {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  margin-top: auto;
+  padding: 15px 9px 5px;
+  border-top: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+/* LOGGED-IN USER DETAILS */
+.home-user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.user-label {
+  color: var(--text-muted);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+.home-user-info strong {
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.home-user-info small {
+  color: var(--text-muted);
+  font-size: 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* ACCOUNT DETAILS */
+.home-user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 28px 8px 0;
+  padding: 14px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-primary);
+  overflow: hidden;
+}
+
+.user-label {
+  color: var(--text-muted);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+.home-user-info strong {
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.home-user-info small {
+  color: var(--text-muted);
+  font-size: 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* SIDEBAR BOTTOM */
+.sidebar-bottom {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  margin-top: auto;
+  padding: 15px 9px 5px;
+  border-top: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.sidebar-bottom > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* AI ENGINE STATUS */
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--success);
+  box-shadow: 0 0 8px rgba(52, 211, 153, 0.4);
+}
+
+.status-text {
+  margin-left: auto;
+  color: var(--success);
+}
+
+/* LOGOUT BUTTON */
+.logout-button {
+  width: 100%;
+  margin-top: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.logout-button:hover {
+  background: rgba(248, 113, 113, 0.08);
+  border-color: var(--danger);
+  color: var(--danger);
+}
