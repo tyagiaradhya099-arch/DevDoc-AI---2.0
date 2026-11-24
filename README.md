@@ -1,133 +1,184 @@
-DevDoc
-Explore a codebase and ask questions about it without jumping between
-files.
+# DevDoc – AI-Powered Codebase Assistant
 
-DevDoc is a web app I built to make it easier to understand and explore
-software projects. You can upload a project, browse its files, open
-source code, and ask questions about the codebase using an AI assistant.
+DevDoc is a web-based application designed to make exploring and understanding software projects easier. It allows users to upload their codebases, browse files, view source code, and ask questions about their projects using an AI-powered assistant.
 
-Live app: https://dev-doc-ai-2-0.vercel.app\
-Source code: https://github.com/tyagiaradhya099-arch/DevDoc-AI---2.0
-Why I built it
-When you're working with an unfamiliar project, understanding how its
-files fit together can take time. I wanted to build one place where I
-could browse a project's structure, read its files, and get help
-understanding the code.
+The idea behind DevDoc is to bring code exploration and AI-assisted understanding into one workspace.
 
-DevDoc is my attempt at putting those pieces together.
-What you can do with it
-- Create an account and sign in.
-- Upload and manage your own projects.
-- Browse a project's folder and file structure.
-- Open files and view their contents in the workspace.
-- Index a project so its content can be used for retrieval.
-- Ask the AI assistant questions about the indexed codebase.
-The AI answers depend on the project being indexed and on the
-information available to the retrieval system. It is intended as a
-code-understanding aid, not a replacement for reading or testing the
-code yourself.
-A look at the app
-Add your own screenshots to the screenshots folder in this repository,
-then keep the image paths below. GitHub will display each image when the
-file exists.
-Welcome page
-screenshots/Welcome.png
-Dashboard page
-screenshots/Overview.png
-Project library
-screenshots/Project.png
-Workspace
-screenshots/Workspace.png
-Authentication Page
-screenshots/Login.png
+**Live Demo:** https://dev-doc-ai-2-0.vercel.app
 
-Built with
-  Part             Technologies
-  Frontend         React, Vite
-Backend          Node.js, Express
-Database         PostgreSQL (Neon)
-Login sessions   express-session, connect-pg-simple
-AI               Google Gemini API
-Vector search    LanceDB
-How it works
-The frontend communicates with an Express API. User accounts, project
-records, and session data are stored in PostgreSQL. Project files are
-handled by the backend. When a project is indexed, DevDoc creates
-embeddings and stores them in LanceDB. When a user asks a question, the
-retrieval layer finds relevant project context and the generation layer
-sends that context to Gemini to produce an answer.
+**GitHub Repository:** https://github.com/tyagiaradhya099-arch/DevDoc-AI---2.0
 
-In short:
-1. A user uploads and selects a project.
-2. DevDoc reads and indexes the project's supported content.
-3. Embeddings are stored in the vector store.
-4. A question is converted into a retrieval query.
-5. Relevant context is retrieved and sent to Gemini.
-6. The assistant returns an answer based on that context.
-Run it locally
-You'll need Node.js and npm installed, along with a PostgreSQL database
-and a Google Gemini API key.
+---
 
-Clone the repository:
+## Overview
+
+Working with an unfamiliar codebase can be challenging, especially when a project contains multiple folders, files, and dependencies.
+
+DevDoc provides a centralized workspace where users can explore project structures, read source files, and interact with an AI assistant to understand their code.
+
+It combines project management, file exploration, and Retrieval-Augmented Generation (RAG) to provide context-aware answers about uploaded projects.
+
+## Features
+
+- **User Authentication:** Register and log in using individual accounts.
+- **Project Management:** Upload, activate, rename, and delete projects.
+- **Project Explorer:** Browse folders and files within an uploaded codebase.
+- **Code Viewer:** Open and inspect source code files.
+- **AI-Powered Chat:** Ask questions about an indexed codebase.
+- **RAG-Based Retrieval:** Retrieve relevant code context before generating AI responses.
+- **User-Specific Projects:** Associate project records with their respective owners.
+
+## Screenshots
+
+### Welcome Page
+
+![DevDoc Welcome Page](Welcome.png)
+
+### Project Library
+
+![DevDoc Project Library](Projects.png)
+
+### Dashboard / Overview
+
+![DevDoc Overview](Overview.png)
+
+### Authentication Page
+
+![DevDoc Login](Login.png)
+
+### Code Workspace
+![DevDoc Workspace](Workspace.png)
+
+## Technology Stack
+
+| Category | Technologies |
+|---|---|
+| Frontend | React.js, Vite |
+| Backend | Node.js, Express.js |
+| Database | PostgreSQL (Neon) |
+| Authentication | Express Session, connect-pg-simple |
+| AI Model | Google Gemini API |
+| Vector Database | LanceDB |
+| Deployment | Vercel, Render |
+
+## How DevDoc Works
+
+DevDoc uses a Retrieval-Augmented Generation (RAG) workflow to answer questions about uploaded codebases.
+
+1. The user uploads a software project.
+2. The backend processes and indexes the project files.
+3. Text embeddings are generated using the Gemini API.
+4. Embeddings are stored in LanceDB.
+5. When a user asks a question, the retrieval service searches for relevant project context.
+6. The retrieved context is passed to Gemini to generate a response.
+
+This approach helps the assistant answer questions using information from the uploaded project rather than relying only on general language-model knowledge.
+
+## Project Structure
+
+The repository contains two main applications:
+
+- `devdoc/` – React frontend built using Vite.
+- `devdoc-backend/` – Express backend responsible for authentication, project management, file operations, and AI-related services.
+
+## Running Locally
+
+### Prerequisites
+
+- Node.js
+- npm
+- PostgreSQL database
+- Google Gemini API key
+
+### 1. Clone the repository
+
+```bash
 git clone https://github.com/tyagiaradhya099-arch/DevDoc-AI---2.0.git
 cd DevDoc-AI---2.0
-Install the backend dependencies:
+```
+
+### 2. Set up the backend
+
+```bash
 cd devdoc-backend
 npm install
-Create a .env file in devdoc-backend and provide the values used by
-the backend:
+```
+
+Create a `.env` file inside the backend directory:
+
+```env
 NODE_ENV=development
 PORT=5000
 DATABASE_URL=your_postgresql_connection_string
 SESSION_SECRET=your_session_secret
 GEMINI_API_KEY=your_gemini_api_key
 CLIENT_URL=http://localhost:5173
+```
+
 Start the backend:
+
+```bash
 npm start
-In a second terminal, install and start the frontend:
+```
+
+### 3. Set up the frontend
+
+Open another terminal:
+
+```bash
 cd devdoc
 npm install
-Create a .env file in devdoc:
-VITE_API_URL=http://localhost:5000
-Then run:
-npm run dev
-Open the local URL printed by Vite in your terminal.
-Deployment
-The frontend is deployed on Vercel and the backend runs on Render.
-PostgreSQL is hosted on Neon.
+```
 
-The current backend deployment uses Render's free service. Its local
-filesystem is temporary, so uploaded project files and local LanceDB
-data may not survive a service restart or redeployment. The
-database-backed account and project metadata are stored separately in
-Neon. Keep this limitation in mind when trying the live demo.
-A few implementation details
-- Authentication uses server-side sessions.
-- Session records are stored in PostgreSQL through
-  connect-pg-simple.
-- Project records are associated with their owner.
-- The backend checks ownership when handling user-specific project
-  operations.
-- The codebase Q&A flow uses retrieval-augmented generation (RAG):
-  retrieve relevant chunks first, then provide that context to the
-  language model.
-Current limitations
-This is a personal project and a learning exercise, so there are
-practical limits:
-- The live backend may take a little time to wake up after being idle.
-- The free hosting setup does not provide persistent local storage for
-  uploaded files or LanceDB.
-- AI responses depend on successful indexing, retrieval quality, and
-  Gemini API availability.
-- Large projects may take longer to index and may be affected by API
-  usage limits.
-What's next
-The main goal was to build and deploy a working end-to-end application
-and understand the engineering decisions behind it. Future improvements
-will depend on testing the current version and identifying problems that
-are worth solving.
-Author
-Built by Aradhya Tyagi.
-- GitHub: https://github.com/tyagiaradhya099-arch
-- Project repository:
-  https://github.com/tyagiaradhya099-arch/DevDoc-AI---2.0
+Create a `.env` file inside the frontend directory:
+
+```env
+VITE_API_URL=http://localhost:5000
+```
+
+Start the frontend:
+
+```bash
+npm run dev
+```
+
+Open the local URL provided by Vite.
+
+## Deployment
+
+DevDoc is deployed using:
+
+- **Frontend:** Vercel
+- **Backend:** Render
+- **Database:** Neon PostgreSQL
+
+The application uses environment variables to manage API configuration and sensitive credentials across development and production environments.
+
+## Current Limitations
+
+- The backend is hosted on Render's free tier and may take some time to respond after periods of inactivity.
+- The free hosting environment does not provide persistent local filesystem storage.
+- Uploaded project files and local LanceDB data may be lost after a backend restart or redeployment.
+- AI responses depend on successful project indexing, retrieval quality, and Gemini API availability.
+
+## What I Learned
+
+Building DevDoc helped me work with several parts of full-stack development, including:
+
+- Designing and connecting frontend and backend systems.
+- Implementing authentication and session management.
+- Working with PostgreSQL and database relationships.
+- Handling file uploads and project-specific data.
+- Understanding embeddings, vector storage, and similarity search.
+- Implementing a basic RAG pipeline.
+- Deploying a full-stack application using cloud platforms.
+
+## Author
+
+**Aradhya Tyagi**
+
+GitHub: https://github.com/tyagiaradhya099-arch
+
+---
+
+*Built as a full-stack development project exploring AI-assisted software engineering and codebase understanding.*
