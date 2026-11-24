@@ -11,7 +11,7 @@ const pool = require("./db");
 
 const app = express();
 
-const PORT= 5000;
+const PORT= process.env.PORT || 5000;
 
 app.use(express.json());
 
@@ -41,7 +41,7 @@ app.use(session({
     cookie: {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
         maxAge: 24 * 60 * 60 * 1000
     }
 }));
@@ -73,13 +73,16 @@ const { deleteProjectChunks } = require("./utils/vectorStore");
 // Track projects currently being indexed.
 const indexingProjects = new Set();
 
-const PROJECTS_ROOT = path.join(__dirname, "user-projects");
-fs.mkdirSync(PROJECTS_ROOT, {recursive: true});
+// Permanent application storage
+const DATA_ROOT = process.env.DATA_DIR || __dirname;
 
+const PROJECTS_ROOT = path.join(DATA_ROOT, "user-projects");
 
+fs.mkdirSync(PROJECTS_ROOT, { recursive: true });
 
-//TEMPORARY UPLOAD DIRECTORY
+// Temporary ZIP upload directory
 const UPLOAD_TEMP = path.join(__dirname, "upload-temp");
+
 fs.mkdirSync(UPLOAD_TEMP, { recursive: true });
 
 const upload = multer({
@@ -1013,10 +1016,11 @@ async function runProjectIndexing(projectId, ownerId) {
 
 // API endpoint to start indexing.
 app.post("/api/projects/:id/index", requireAuth, async (req, res) => {
-    try {
-        const projectId = req.params.id;
-        const ownerId = req.session.userId;
+     const projectId = req.params.id;
+     const ownerId = req.session.userId;
 
+    try {
+       
         // Verify that this project belongs to the logged-in user.
         const projectResult = await pool.query(
             `SELECT id
@@ -1508,5 +1512,5 @@ app.post("/api/upload", requireAuth, (req, res) => {
     });
 });
 app.listen(PORT, () => {
-    console.log(`DevDoc backend running on http://localhost:${PORT}`);
+    console.log(`DevDoc backend running on port ${PORT}`);
 });

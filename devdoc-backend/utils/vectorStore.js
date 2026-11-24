@@ -259,49 +259,6 @@ async function deleteProjectChunks(projectId) {
         deletedCount,
     };
 }
-// Remove outdated chunks after a successful re-indexing run.
-async function deleteStaleProjectChunks(projectId, indexingStartedAt) {
-
-    if (
-        typeof projectId !== "string" ||
-        !projectId.trim()
-    ) {
-        throw new Error("A valid project ID is required.");
-    }
-
-    const cutoffDate = new Date(indexingStartedAt);
-
-    if (Number.isNaN(cutoffDate.getTime())) {
-        throw new Error("A valid indexing start time is required.");
-    }
-
-    const table = await getCodeChunksTable();
-
-    if (!table) {
-        return {
-            deletedCount: 0,
-            projectId,
-        };
-    }
-
-    const safeProjectId = projectId.replace(/'/g, "''");
-    const cutoffTimestamp = cutoffDate.toISOString();
-
-    const staleFilter =
-        `project_id = '${safeProjectId}' AND indexed_at < '${cutoffTimestamp}'`;
-
-    const deletedCount = await table.countRows(staleFilter);
-
-    if (deletedCount > 0) {
-        await table.delete(staleFilter);
-    }
-
-    return {
-        status: "success",
-        projectId,
-        deletedCount,
-    };
-}
 //7. Search for similar code chunks.
 async function searchSimilarChunks(
     queryEmbedding,

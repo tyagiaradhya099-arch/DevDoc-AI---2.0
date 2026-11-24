@@ -1,3 +1,4 @@
+import API_BASE_URL from "../../api";
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import "./Home.css";
@@ -10,7 +11,7 @@ function Home() {
     const fetchCurrentUser = async () => {
       try {
         const response = await fetch(
-          "http://localhost:5000/api/auth/me",
+          `${API_BASE_URL}/api/auth/me`,
            { credentials: "include" }
         );
 
@@ -29,7 +30,7 @@ function Home() {
  const handleLogout = async () => {
     try {
         const response = await fetch(
-            "http://localhost:5000/api/auth/logout",
+          `${API_BASE_URL}/api/auth/logout`, 
             {
                 method: "POST",
                 credentials: "include"

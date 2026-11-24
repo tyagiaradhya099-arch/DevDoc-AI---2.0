@@ -1,3 +1,4 @@
+import API_BASE_URL from "../../api";
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import "./Register.css";
@@ -23,7 +24,7 @@ function Register() {
         }
 
         try {
-            const response = await fetch("http://localhost:5000/api/auth/register", {
+            const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"

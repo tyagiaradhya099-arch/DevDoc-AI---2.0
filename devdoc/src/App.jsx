@@ -6,6 +6,7 @@ import FileExplorer from "./components/FileExplorer/FileExplorer";
 import ProjectLibrary from "./components/ProjectLibrary/ProjectLibrary";
 import ProjectUpload from "./components/ProjectUpload/ProjectUpload";
 import AppLayout from "./layouts/AppLayout";
+import API_BASE_URL from "./api";
 import "./App.css";
 
 function App() {
@@ -50,7 +51,7 @@ function App() {
     setIsSendingMessage(true);
 
     try {
-      const response = await fetch("http://localhost:5000/api/chat", {
+      const response = await fetch(`${API_BASE_URL}/api/chat`, {
       method: "POST",
       credentials: "include",
 
@@ -100,7 +101,7 @@ function App() {
     setFilesLoading(true);
     setFilesError("");
 
-    const response = await fetch("http://localhost:5000/api/files", {
+    const response = await fetch(`${API_BASE_URL}/api/files`, {
       credentials: "include",
     });
 
@@ -123,7 +124,7 @@ function App() {
   //to show retrieved projects from the backend
 const fetchProjects = useCallback(async () => {
   try {
-  const response = await fetch("http://localhost:5000/api/projects",{
+  const response = await fetch(`${API_BASE_URL}/api/projects`,{
   credentials: "include",
   });
     if(!response.ok) {
@@ -142,7 +143,7 @@ const handleSwitchProject = async (projectId) => {
     setUploadMessage("");
 
     const response = await fetch(
-      `http://localhost:5000/api/projects/${encodeURIComponent(projectId)}/activate`,
+     `${API_BASE_URL}/api/projects/${encodeURIComponent(projectId)}/activate`,
       {
         method: "POST",
         credentials: "include",
@@ -196,7 +197,7 @@ const handleRenameProject = async (project) => {
 
   try {
     const response = await fetch(
-      `http://localhost:5000/api/projects/${encodeURIComponent(project.id)}/rename`,
+      `${API_BASE_URL}/api/projects/${encodeURIComponent(project.id)}/rename`,
       {
         method: "PATCH",
         credentials: "include",
@@ -266,7 +267,7 @@ const handleDeleteProject = async (project) => {
 
   try {
     const response = await fetch(
-      `http://localhost:5000/api/projects/${encodeURIComponent(project.id)}`,
+      `${API_BASE_URL}/api/projects/${encodeURIComponent(project.id)}`,
       {
         method: "DELETE",
         credentials: "include",
@@ -336,7 +337,7 @@ const handleIndexProject = async (project) => {
   try {
 
     const response = await fetch(
-      `http://localhost:5000/api/projects/${encodeURIComponent(project.id)}/index`,
+      `${API_BASE_URL}/api/projects/${encodeURIComponent(project.id)}/index`,
       {
         method: "POST",
         credentials: "include",
@@ -488,7 +489,7 @@ const handleUpload = async () => {
   formData.append("project", selectedZip);
 
   try {
-    const response = await fetch("http://localhost:5000/api/upload", {
+    const response = await fetch(`${API_BASE_URL}/api/upload`, {
       method: "POST",
       body: formData,
       credentials: "include",
@@ -532,7 +533,7 @@ const handleUpload = async () => {
       setFileContent("");
 
       const response = await fetch(
-        `http://localhost:5000/api/file?path=${encodeURIComponent(selectedFile)}`,
+        `${API_BASE_URL}/api/file?path=${encodeURIComponent(selectedFile)}`,
         {
           credentials: "include",
         }
@@ -556,7 +557,7 @@ const handleUpload = async () => {
 }, [selectedFile]);
 //to fetch project name from backend
 useEffect(() => {
-  fetch("http://localhost:5000/api/project",{
+  fetch(`${API_BASE_URL}/api/project`,{
     credentials: "include",
   })
     .then((response) => {

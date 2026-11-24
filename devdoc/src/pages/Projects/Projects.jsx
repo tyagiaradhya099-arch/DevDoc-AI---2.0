@@ -1,3 +1,4 @@
+import API_BASE_URL from "../../api";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "./Projects.css";
@@ -16,7 +17,7 @@ function Projects() {
       setIsLoading(true);
       setError("");
 
-      const response = await fetch("http://localhost:5000/api/projects", {
+      const response = await fetch(`${API_BASE_URL}/api/projects`, {
         credentials: "include",
       });
 
@@ -61,7 +62,7 @@ function Projects() {
     setOpeningProjectId(projectId);
 
     const response = await fetch(
-      `http://localhost:5000/api/projects/${projectId}/activate`,
+      `${API_BASE_URL}/api/projects/${projectId}/activate`,
       {
         method: "POST",
         credentials: "include",
