@@ -1,4 +1,4 @@
-
+::: {align="center"}
 # DevDoc
 
 ### AI-Powered Codebase Intelligence Platform
@@ -80,17 +80,15 @@ Application Screenshots
 Add actual application screenshots in the locations below. A suggested
 location is docs/images/ in the repository.
 1. Welcome Page
-<!-- Add screenshot: docs/images/welcome.png -->
+   screenshots/Welcome.png
 2. Authentication
-<!-- Add screenshot: docs/images/authentication.png -->
+  screenshots/Login.png
 3. Project Dashboard
-<!-- Add screenshot: docs/images/dashboard.png -->
+  screenshots/overview.png
 4. Project Library
-<!-- Add screenshot: docs/images/project-library.png -->
+  screenshots/Project.png
 5. Codebase Workspace
-<!-- Add screenshot: docs/images/workspace.png -->
-6. AI Codebase Interaction
-<!-- Add screenshot: docs/images/ai-chat.png -->
+  screenshots/Workspace.png
 Technology Stack
 DevDoc follows a full-stack architecture consisting of a React frontend,
 Express backend, relational database, vector database, and an external
@@ -435,3 +433,7 @@ Computer Science & Engineering | Data Science
   @tyagiaradhya099-arch
 - Project Repository: DevDoc AI
   2.0
+- Live Application: DevDoc
+::: {align="center"}
+**DevDoc --- Making Codebases Easier to Understand.**
+:::
